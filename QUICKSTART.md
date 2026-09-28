@@ -5,7 +5,7 @@
 本系统采用**前后端分离**架构：
 
 - **后端**（FastAPI）：运行在 `http://localhost:8000`，只提供 API 接口
-- **前端**（React）：运行在 `http://localhost:5173`，提供用户界面
+- **前端**（React）：运行在 `http://localhost:3000`，提供用户界面
 
 ⚠️ **重要**：访问 `http://localhost:8000/` 只会看到 API 信息页面，**不是前端界面**！
 
@@ -23,7 +23,7 @@ npm install
 npm run dev
 ```
 
-访问：**http://localhost:5173**
+访问：**http://localhost:3000**
 
 ✅ 前端会使用内置的模拟数据运行
 ✅ 无需启动后端
@@ -98,7 +98,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 📝 Log File: logs/app.log
 🌐 API Host: 0.0.0.0
 🌐 API Port: 8000
-🔒 CORS Origins: ['http://localhost:5173']
+🔒 CORS Origins: ['http://localhost:3000']
 ============================================================
 ```
 
@@ -118,7 +118,7 @@ export VITE_USE_REAL_API=true  # macOS/Linux
 npm run dev
 ```
 
-访问：**http://localhost:5173**
+访问：**http://localhost:3000**
 
 ---
 
@@ -168,7 +168,7 @@ curl http://localhost:11434/api/tags
 
 ### 4. 在前端测试
 
-1. 访问 **http://localhost:5173**
+1. 访问 **http://localhost:3000**
 2. 点击任意算法卡片（如 K-Means）
 3. 切换到"动态演示"标签
 4. 点击"生成 AI 解说"按钮
@@ -181,7 +181,7 @@ curl http://localhost:11434/api/tags
 ### Q1: 访问 http://localhost:8000/ 看不到前端页面？
 
 **A**: 这是正常的！后端只提供 API，不提供前端页面。
-- 前端页面在：**http://localhost:5173**
+- 前端页面在：**http://localhost:3000**
 - 后端 API 文档在：**http://localhost:8000/docs**
 
 ### Q2: 前端显示"AI 解说词生成失败"？
@@ -210,8 +210,8 @@ OLLAMA_TIMEOUT=30
 ### Q4: 前端无法连接后端？
 
 **A**: 检查 CORS 配置：
-1. 后端 `.env` 中的 `CORS_ORIGINS` 是否包含 `http://localhost:5173`
-2. 前端是否运行在 `http://localhost:5173`
+1. 后端 `.env` 中的 `CORS_ORIGINS` 是否包含 `http://localhost:3000`
+2. 前端是否运行在 `http://localhost:3000`
 
 ### Q5: 只想看前端，不想启动后端？
 
@@ -236,7 +236,7 @@ npm run dev
 │   浏览器    │
 └──────┬──────┘
        │
-       │ http://localhost:5173
+       │ http://localhost:3000
        ▼
 ┌─────────────┐
 │ React 前端  │
@@ -284,7 +284,7 @@ echo ""
 
 # 检查前端
 echo "3️⃣  检查前端..."
-if curl -s http://localhost:5173 > /dev/null; then
+if curl -s http://localhost:3000 > /dev/null; then
     echo "   ✅ 前端运行正常"
 else
     echo "   ❌ 前端未运行，请执行: npm run dev"
@@ -306,12 +306,12 @@ chmod +x check_system.sh
 
 | 组件 | 地址 | 用途 |
 |------|------|------|
-| 前端界面 | http://localhost:5173 | 用户界面 |
+| 前端界面 | http://localhost:3000 | 用户界面 |
 | 后端 API | http://localhost:8000 | API 服务 |
 | API 文档 | http://localhost:8000/docs | Swagger 文档 |
 | Ollama | http://localhost:11434 | AI 模型服务 |
 
 **记住**：
 - 前端和后端是**分开启动**的
-- 访问前端去 **http://localhost:5173**
+- 访问前端去 **http://localhost:3000**
 - 访问后端 API 文档去 **http://localhost:8000/docs**
