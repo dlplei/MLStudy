@@ -1,9 +1,76 @@
 import { DemoConfig } from '../types/demo';
 
-/**
- * K-Means 聚类演示数据
- * 模拟二维空间中的聚类过程，5个关键步骤
- */
+// ==================== 基础数据（必须在配置对象之前定义） ====================
+
+// 基础数据点（3个簇）
+const baseClusters = [
+  // Cluster 0: 左下区域
+  [
+    { x: 1.5, y: 2.0 }, { x: 2.0, y: 3.5 }, { x: 3.0, y: 2.5 },
+    { x: 2.5, y: 1.5 }, { x: 1.8, y: 3.0 }, { x: 3.2, y: 3.2 },
+    { x: 2.2, y: 2.8 }, { x: 1.2, y: 2.5 }, { x: 2.8, y: 1.8 },
+    { x: 3.5, y: 2.0 },
+  ],
+  // Cluster 1: 右上区域
+  [
+    { x: 6.0, y: 7.0 }, { x: 7.0, y: 8.0 }, { x: 6.5, y: 6.5 },
+    { x: 7.5, y: 7.5 }, { x: 6.8, y: 8.5 }, { x: 7.2, y: 6.8 },
+    { x: 6.2, y: 7.8 }, { x: 7.8, y: 7.2 }, { x: 6.5, y: 8.2 },
+    { x: 7.0, y: 7.0 },
+  ],
+  // Cluster 2: 右下区域
+  [
+    { x: 8.0, y: 2.0 }, { x: 7.5, y: 3.0 }, { x: 8.5, y: 1.5 },
+    { x: 9.0, y: 2.5 }, { x: 7.8, y: 2.8 }, { x: 8.2, y: 1.8 },
+    { x: 8.8, y: 3.2 }, { x: 7.2, y: 2.2 }, { x: 8.5, y: 2.5 },
+    { x: 9.2, y: 1.8 },
+  ],
+];
+
+// 线性回归基础数据
+const baseLinearData = [
+  { x: 1, y: 3.5 }, { x: 1.5, y: 4.8 }, { x: 2, y: 6.2 },
+  { x: 2.5, y: 7.8 }, { x: 3, y: 9.1 }, { x: 3.5, y: 10.8 },
+  { x: 4, y: 12.0 }, { x: 4.5, y: 13.5 }, { x: 5, y: 15.2 },
+  { x: 5.5, y: 16.0 }, { x: 6, y: 17.8 }, { x: 6.5, y: 19.5 },
+  { x: 7, y: 20.8 }, { x: 7.5, y: 22.5 }, { x: 8, y: 23.8 },
+];
+
+// ==================== 数据生成函数 ====================
+
+function generateKMeansPoints(step: number) {
+  const points = [];
+
+  for (let c = 0; c < 3; c++) {
+    for (const pt of baseClusters[c]) {
+      if (step <= 1) {
+        points.push({ x: pt.x, y: pt.y, cluster: -1 });
+      } else {
+        points.push({ x: pt.x, y: pt.y, cluster: c });
+      }
+    }
+  }
+
+  return points;
+}
+
+function generateLinearPoints(step: number) {
+  const w = [0, 0.8, 1.8, 2.5, 2.9][step];
+  const b = [5, 3.2, 1.5, 0.8, 0.5][step];
+
+  return baseLinearData.map((pt) => {
+    const predicted = w * pt.x + b;
+    return {
+      x: pt.x,
+      y: pt.y,
+      predicted: Math.round(predicted * 100) / 100,
+      residual: Math.round((pt.y - predicted) * 100) / 100,
+    };
+  });
+}
+
+// ==================== 演示配置 ====================
+
 export const kmeansDemoConfig: DemoConfig = {
   algorithmId: 'kmeans',
   title: { zh: 'K-Means 聚类过程演示', en: 'K-Means Clustering Process Demo' },
@@ -93,10 +160,6 @@ export const kmeansDemoConfig: DemoConfig = {
   ],
 };
 
-/**
- * 线性回归演示数据
- * 模拟梯度下降拟合过程，5个关键步骤
- */
 export const linearRegressionDemoConfig: DemoConfig = {
   algorithmId: 'linear-regression',
   title: { zh: '线性回归梯度下降演示', en: 'Linear Regression Gradient Descent Demo' },
@@ -179,72 +242,3 @@ export const linearRegressionDemoConfig: DemoConfig = {
     },
   ],
 };
-
-// ==================== 数据生成函数 ====================
-
-// 基础数据点（3个簇）
-const baseClusters = [
-  // Cluster 0: 左下区域
-  [
-    { x: 1.5, y: 2.0 }, { x: 2.0, y: 3.5 }, { x: 3.0, y: 2.5 },
-    { x: 2.5, y: 1.5 }, { x: 1.8, y: 3.0 }, { x: 3.2, y: 3.2 },
-    { x: 2.2, y: 2.8 }, { x: 1.2, y: 2.5 }, { x: 2.8, y: 1.8 },
-    { x: 3.5, y: 2.0 },
-  ],
-  // Cluster 1: 右上区域
-  [
-    { x: 6.0, y: 7.0 }, { x: 7.0, y: 8.0 }, { x: 6.5, y: 6.5 },
-    { x: 7.5, y: 7.5 }, { x: 6.8, y: 8.5 }, { x: 7.2, y: 6.8 },
-    { x: 6.2, y: 7.8 }, { x: 7.8, y: 7.2 }, { x: 6.5, y: 8.2 },
-    { x: 7.0, y: 7.0 },
-  ],
-  // Cluster 2: 右下区域
-  [
-    { x: 8.0, y: 2.0 }, { x: 7.5, y: 3.0 }, { x: 8.5, y: 1.5 },
-    { x: 9.0, y: 2.5 }, { x: 7.8, y: 2.8 }, { x: 8.2, y: 1.8 },
-    { x: 8.8, y: 3.2 }, { x: 7.2, y: 2.2 }, { x: 8.5, y: 2.5 },
-    { x: 9.2, y: 1.8 },
-  ],
-];
-
-function generateKMeansPoints(step: number) {
-  const points = [];
-
-  for (let c = 0; c < 3; c++) {
-    for (const pt of baseClusters[c]) {
-      if (step <= 1) {
-        // 未分配
-        points.push({ x: pt.x, y: pt.y, cluster: -1 });
-      } else {
-        // 已分配
-        points.push({ x: pt.x, y: pt.y, cluster: c });
-      }
-    }
-  }
-
-  return points;
-}
-
-// 线性回归基础数据
-const baseLinearData = [
-  { x: 1, y: 3.5 }, { x: 1.5, y: 4.8 }, { x: 2, y: 6.2 },
-  { x: 2.5, y: 7.8 }, { x: 3, y: 9.1 }, { x: 3.5, y: 10.8 },
-  { x: 4, y: 12.0 }, { x: 4.5, y: 13.5 }, { x: 5, y: 15.2 },
-  { x: 5.5, y: 16.0 }, { x: 6, y: 17.8 }, { x: 6.5, y: 19.5 },
-  { x: 7, y: 20.8 }, { x: 7.5, y: 22.5 }, { x: 8, y: 23.8 },
-];
-
-function generateLinearPoints(step: number) {
-  const w = [0, 0.8, 1.8, 2.5, 2.9][step];
-  const b = [5, 3.2, 1.5, 0.8, 0.5][step];
-
-  return baseLinearData.map((pt) => {
-    const predicted = w * pt.x + b;
-    return {
-      x: pt.x,
-      y: pt.y,
-      predicted: Math.round(predicted * 100) / 100,
-      residual: Math.round((pt.y - predicted) * 100) / 100,
-    };
-  });
-}
