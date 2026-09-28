@@ -1,17 +1,3 @@
-/**
- * 演示数据服务 (DemoService)
- * 
- * 模拟后端 API 行为，包含：
- * - LRU 缓存机制
- * - 结构化日志记录
- * - 模拟网络延迟
- * - 优雅降级
- * - 统一的数据契约
- * 
- * 未来接入真实后端时，只需替换 fetchDemoData 的实现，
- * 前端消费逻辑完全不变。
- */
-
 import { LRUCache } from './LRUCache';
 import { logger } from './Logger';
 import {
@@ -24,44 +10,19 @@ import {
   linearRegressionDemoConfig,
 } from '../data/demos';
 
-// ==================== 配置 ====================
-
-/** 模拟网络延迟范围（毫秒） */
 const MIN_LATENCY_MS = 50;
 const MAX_LATENCY_MS = 200;
-
-/** 模拟超时阈值（毫秒） */
 const TIMEOUT_MS = 5000;
+const DATA_VERSION = '3.0.0';
 
-/** 数据版本号 */
-const DATA_VERSION = '2.0.0';
-
-// ==================== 本地数据源注册表 ====================
-
-/** 本地数据源 - 模拟后端数据库 */
 const localDataSource: Record<string, DemoConfig> = {
   'kmeans': kmeansDemoConfig,
   'linear-regression': linearRegressionDemoConfig,
 };
 
-// ==================== 缓存实例 ====================
-
 const demoCache = new LRUCache<DemoConfig>(30, 10 * 60 * 1000);
 
-// ==================== 核心服务 ====================
-
 class DemoService {
-  /**
-   * 获取演示数据（模拟 API 调用）
-   * 
-   * 流程：
-   * 1. 生成请求 ID
-   * 2. 检查缓存
-   * 3. 缓存命中 → 直接返回
-   * 4. 缓存未命中 → 从数据源获取
-   * 5. 写入缓存
-   * 6. 记录结构化日志
-   */
   async fetchDemoConfig(
     algorithmId: string,
     params?: Record<string, unknown>
@@ -70,34 +31,30 @@ class DemoService {
     const startTime = performance.now();
     const cacheKey = LRUCache.generateKey(algorithmId, params);
 
-    logger.debug('DEMO_SERVICE', `Fetching demo config`, {
+    logger.debug('DEMO_SERVICE', 'Fetching demo config', {
       algorithmId,
       cacheKey,
       requestId,
     }, requestId);
 
     try {
-      // 模拟网络延迟
       await this.simulateLatency();
 
-      // 检查超时
       const elapsed = performance.now() - startTime;
       if (elapsed > TIMEOUT_MS) {
         throw new Error('Request timeout');
       }
 
-      // 检查缓存
       const cached = demoCache.get(cacheKey);
       if (cached) {
         const responseTime = performance.now() - startTime;
-        logger.info('DEMO_SERVICE', `Cache HIT`, {
+        logger.info('DEMO_SERVICE', 'Cache HIT', {
           algorithmId,
           cacheKey,
           responseTimeMs: Math.round(responseTime),
           requestId,
         }, requestId);
 
-        // 记录结构化日志
         logger.logDemoRequest({
           algorithm_name: algorithmId,
           parameters: params || {},
@@ -109,17 +66,17 @@ class DemoService {
           total_steps: cached.totalSteps,
         });
 
-        return {
+        const response: DemoApiResponse = {
           status: 'success',
-          data: cached,
+          result: cached,
           responseTimeMs: Math.round(responseTime),
           cached: true,
           requestId,
         };
+        return response;
       }
 
-      // 缓存未命中 - 从数据源获取
-      logger.debug('DEMO_SERVICE', `Cache MISS, computing`, {
+      logger.debug('DEMO_SERVICE', 'Cache MISS, computing', {
         algorithmId,
         cacheKey,
         requestId,
@@ -129,33 +86,32 @@ class DemoService {
 
       if (!config) {
         const responseTime = performance.now() - startTime;
-        logger.warn('DEMO_SERVICE', `Demo not available`, {
+        logger.warn('DEMO_SERVICE', 'Demo not available', {
           algorithmId,
           requestId,
         }, requestId);
 
-        return {
+        const response: DemoApiResponse = {
           status: 'error',
-          data: null,
-          error: `Demo not available for algorithm: ${algorithmId}`,
+          result: null,
+          error: 'Demo not available for algorithm: ' + algorithmId,
           responseTimeMs: Math.round(responseTime),
           cached: false,
           requestId,
         };
+        return response;
       }
 
-      // 写入缓存
       demoCache.set(cacheKey, config);
 
       const responseTime = performance.now() - startTime;
-      logger.info('DEMO_SERVICE', `Computed and cached`, {
+      logger.info('DEMO_SERVICE', 'Computed and cached', {
         algorithmId,
         cacheKey,
         responseTimeMs: Math.round(responseTime),
         requestId,
       }, requestId);
 
-      // 记录结构化日志
       logger.logDemoRequest({
         algorithm_name: algorithmId,
         parameters: params || {},
@@ -167,18 +123,19 @@ class DemoService {
         total_steps: config.totalSteps,
       });
 
-      return {
+      const response: DemoApiResponse = {
         status: 'success',
-        data: config,
+        result: config,
         responseTimeMs: Math.round(responseTime),
         cached: false,
         requestId,
       };
+      return response;
     } catch (err) {
       const responseTime = performance.now() - startTime;
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
 
-      logger.error('DEMO_SERVICE', `Request failed`, {
+      logger.error('DEMO_SERVICE', 'Request failed', {
         algorithmId,
         error: errorMsg,
         responseTimeMs: Math.round(responseTime),
@@ -197,20 +154,18 @@ class DemoService {
         error: errorMsg,
       });
 
-      return {
+      const response: DemoApiResponse = {
         status: 'error',
-        data: null,
+        result: null,
         error: errorMsg,
         responseTimeMs: Math.round(responseTime),
         cached: false,
         requestId,
       };
+      return response;
     }
   }
 
-  /**
-   * 获取单个步骤的数据（模拟按需加载 API）
-   */
   async fetchStep(
     algorithmId: string,
     stepIndex: number,
@@ -218,73 +173,64 @@ class DemoService {
   ): Promise<DemoApiResponse<DemoSnapshot>> {
     const configResponse = await this.fetchDemoConfig(algorithmId, params);
 
-    if (configResponse.status !== 'success' || !configResponse.data) {
-      return {
+    if (configResponse.status !== 'success' || !configResponse.result) {
+      const response: DemoApiResponse<DemoSnapshot> = {
         status: configResponse.status as 'error' | 'timeout',
-        data: null,
+        result: null,
         error: configResponse.error,
         responseTimeMs: configResponse.responseTimeMs,
         cached: configResponse.cached,
         requestId: configResponse.requestId,
       };
+      return response;
     }
 
-    const snapshot = configResponse.data.snapshots[stepIndex];
+    const snapshot = configResponse.result.snapshots[stepIndex];
     if (!snapshot) {
-      return {
+      const response: DemoApiResponse<DemoSnapshot> = {
         status: 'error',
-        data: null,
-        error: `Step ${stepIndex} not found`,
+        result: null,
+        error: 'Step ' + stepIndex + ' not found',
         responseTimeMs: configResponse.responseTimeMs,
         cached: configResponse.cached,
         requestId: configResponse.requestId,
       };
+      return response;
     }
 
-    return {
+    const response: DemoApiResponse<DemoSnapshot> = {
       status: 'success',
-      data: snapshot,
+      result: snapshot,
       responseTimeMs: configResponse.responseTimeMs,
       cached: configResponse.cached,
       requestId: configResponse.requestId,
     };
+    return response;
   }
 
-  /**
-   * 检查算法是否有可用的演示
-   */
   hasDemo(algorithmId: string): boolean {
     return algorithmId in localDataSource;
   }
 
-  /**
-   * 获取所有支持演示的算法 ID 列表
-   */
   getAvailableDemos(): string[] {
     return Object.keys(localDataSource);
   }
 
-  /**
-   * 获取缓存统计信息
-   */
   getCacheStats() {
     return demoCache.getStats();
   }
 
-  /**
-   * 清除缓存
-   */
   clearCache(): void {
     demoCache.clear();
     logger.info('DEMO_SERVICE', 'Cache cleared');
   }
 
-  // ==================== 内部方法 ====================
+  updateConfigInCache(algorithmId: string, config: DemoConfig): void {
+    const cacheKey = LRUCache.generateKey(algorithmId, config.params);
+    demoCache.set(cacheKey, config);
+    logger.info('DEMO_SERVICE', 'Config updated in cache', { algorithmId });
+  }
 
-  /**
-   * 从数据源计算演示配置
-   * 未来这里将替换为后端 API 调用
-   */
   private computeDemoConfig(
     algorithmId: string,
     _params?: Record<string, unknown>
@@ -292,27 +238,28 @@ class DemoService {
     const baseConfig = localDataSource[algorithmId];
     if (!baseConfig) return null;
 
-    // 为每个快照注入元信息（模拟后端处理）
-    const enhancedSnapshots: DemoSnapshot[] = baseConfig.snapshots.map((snapshot) => ({
-      ...snapshot,
-      metadata: {
-        generationTimeMs: Math.round(Math.random() * 50 + 10),
-        source: 'compute' as const,
-        cacheKey: LRUCache.generateKey(algorithmId, _params),
-        version: DATA_VERSION,
-      },
-    }));
+    const enhancedSnapshots: DemoSnapshot[] = baseConfig.snapshots.map((snapshot) => {
+      const enhanced: DemoSnapshot = {
+        ...snapshot,
+        stepMeta: {
+          generationTimeMs: Math.round(Math.random() * 50 + 10),
+          source: 'compute',
+          cacheKey: LRUCache.generateKey(algorithmId, _params),
+          version: DATA_VERSION,
+          explanationSource: 'preset',
+        },
+      };
+      return enhanced;
+    });
 
-    return {
+    const config: DemoConfig = {
       ...baseConfig,
       snapshots: enhancedSnapshots,
       params: _params,
     };
+    return config;
   }
 
-  /**
-   * 模拟网络延迟
-   */
   private simulateLatency(): Promise<void> {
     const latency = Math.floor(
       Math.random() * (MAX_LATENCY_MS - MIN_LATENCY_MS) + MIN_LATENCY_MS
@@ -321,5 +268,4 @@ class DemoService {
   }
 }
 
-// 全局单例
 export const demoService = new DemoService();
