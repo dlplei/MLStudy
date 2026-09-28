@@ -1,15 +1,8 @@
 import { useState } from 'react';
 import { algorithms, categories, Algorithm, Category } from './data/algorithms';
 import { translations, Lang } from './i18n/translations';
-import { kmeansDemoConfig, linearRegressionDemoConfig } from './data/demos';
-import { DemoConfig } from './types/demo';
+import { demoService } from './services/DemoService';
 import { AlgorithmDemoContainer } from './components/demos/AlgorithmDemoContainer';
-
-// 演示配置注册表 - 扩展新算法时只需在此添加
-const demoRegistry: Record<string, DemoConfig> = {
-  'kmeans': kmeansDemoConfig,
-  'linear-regression': linearRegressionDemoConfig,
-};
 
 function App() {
   const [lang, setLang] = useState<Lang>('zh');
@@ -50,7 +43,7 @@ function App() {
   const getCategoryDescription = (cat: Category) =>
     lang === 'zh' ? cat.description : cat.descriptionEn;
 
-  const hasDemo = (algoId: string) => algoId in demoRegistry;
+  const hasDemo = (algoId: string) => demoService.hasDemo(algoId);
 
   const toggleLang = () => {
     setLang(lang === 'zh' ? 'en' : 'zh');
@@ -93,8 +86,8 @@ function App() {
               </span>
               <span className="text-xs text-emerald-400 font-medium">
                 {lang === 'zh'
-                  ? `✨ ${Object.keys(demoRegistry).length} 种算法支持动态演示`
-                  : `✨ ${Object.keys(demoRegistry).length} algorithms with interactive demos`}
+                  ? `✨ ${demoService.getAvailableDemos().length} 种算法支持动态演示`
+                  : `✨ ${demoService.getAvailableDemos().length} algorithms with interactive demos`}
               </span>
             </div>
           </div>
@@ -394,7 +387,6 @@ function App() {
                 <DemoTab
                   algoId={selectedAlgorithm.id}
                   lang={lang}
-                  demoRegistry={demoRegistry}
                 />
               )}
             </div>
@@ -559,13 +551,10 @@ function DetailTab({
 interface DemoTabProps {
   algoId: string;
   lang: Lang;
-  demoRegistry: Record<string, DemoConfig>;
 }
 
-function DemoTab({ algoId, lang, demoRegistry }: DemoTabProps) {
-  const config = demoRegistry[algoId];
-
-  if (!config) {
+function DemoTab({ algoId, lang }: DemoTabProps) {
+  if (!demoService.hasDemo(algoId)) {
     return (
       <div className="text-center py-8">
         <span className="text-4xl">🚧</span>
@@ -578,7 +567,7 @@ function DemoTab({ algoId, lang, demoRegistry }: DemoTabProps) {
     );
   }
 
-  return <AlgorithmDemoContainer config={config} lang={lang} />;
+  return <AlgorithmDemoContainer algorithmId={algoId} lang={lang} />;
 }
 
 export default App;

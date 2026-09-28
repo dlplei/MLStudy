@@ -1,62 +1,135 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { DemoConfig, DemoState, DemoActions } from '../types/demo';
+import { DemoConfig, DemoState, DemoActions, DemoSnapshot } from '../types/demo';
+import { demoService } from '../services/DemoService';
+import { logger } from '../services/Logger';
 
 /**
- * 算法演示自定义 Hook
- * 封装演示状态管理逻辑，与UI解耦
- * 支持自动播放、手动控制、错误降级
+ * 算法演示自定义 Hook (Phase 2)
+ * 
+ * 通过 DemoService 异步获取数据，集成 LRU 缓存和日志。
+ * 支持优雅降级：如果数据加载失败，自动回退到静态模式。
  */
 export function useAlgorithmDemo(
-  config: DemoConfig | null,
-  autoPlayInterval: number = 2000
-): DemoState & DemoActions {
+  algorithmId: string | null,
+  autoPlayInterval: number = 2500
+): DemoState & DemoActions & { config: DemoConfig | null } {
   const [state, setState] = useState<DemoState>({
     currentStep: 0,
     isPlaying: false,
     isComplete: false,
-    currentSnapshot: config?.snapshots[0] || null,
+    isLoading: false,
+    currentSnapshot: null,
     error: null,
+    isDegraded: false,
   });
 
+  const [config, setConfig] = useState<DemoConfig | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // 当 config 变化时重置状态
+  // 当 algorithmId 变化时，通过 DemoService 加载数据
   useEffect(() => {
-    if (config) {
+    if (!algorithmId) {
+      setConfig(null);
       setState({
         currentStep: 0,
         isPlaying: false,
         isComplete: false,
-        currentSnapshot: config.snapshots[0] || null,
+        isLoading: false,
+        currentSnapshot: null,
         error: null,
+        isDegraded: false,
       });
+      return;
     }
-    // 清理定时器
+
+    let cancelled = false;
+
+    const loadDemo = async () => {
+      setState((prev) => ({ ...prev, isLoading: true, error: null, isDegraded: false }));
+
+      try {
+        const response = await demoService.fetchDemoConfig(algorithmId);
+
+        if (cancelled) return;
+
+        if (response.status === 'success' && response.data) {
+          const loadedConfig = response.data;
+          setConfig(loadedConfig);
+          setState({
+            currentStep: 0,
+            isPlaying: false,
+            isComplete: false,
+            isLoading: false,
+            currentSnapshot: loadedConfig.snapshots[0] || null,
+            error: null,
+            isDegraded: false,
+          });
+
+          logger.info('DEMO_HOOK', `Demo loaded successfully`, {
+            algorithmId,
+            steps: loadedConfig.totalSteps,
+            cached: response.cached,
+            responseTimeMs: response.responseTimeMs,
+          });
+        } else {
+          // 降级处理
+          logger.warn('DEMO_HOOK', `Demo unavailable, degrading`, {
+            algorithmId,
+            error: response.error,
+          });
+
+          setState({
+            currentStep: 0,
+            isPlaying: false,
+            isComplete: false,
+            isLoading: false,
+            currentSnapshot: null,
+            error: response.error || 'Demo data unavailable',
+            isDegraded: true,
+          });
+        }
+      } catch (err) {
+        if (cancelled) return;
+
+        const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+        logger.error('DEMO_HOOK', `Load failed`, { algorithmId, error: errorMsg });
+
+        setState({
+          currentStep: 0,
+          isPlaying: false,
+          isComplete: false,
+          isLoading: false,
+          currentSnapshot: null,
+          error: errorMsg,
+          isDegraded: true,
+        });
+      }
+    };
+
+    loadDemo();
+
     return () => {
+      cancelled = true;
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
     };
-  }, [config]);
+  }, [algorithmId]);
 
   // 自动播放逻辑
   useEffect(() => {
     if (state.isPlaying && config) {
       intervalRef.current = setInterval(() => {
         setState((prev) => {
+          if (!config) return prev;
           const nextStep = prev.currentStep + 1;
           if (nextStep >= config.snapshots.length) {
-            // 播放完成
             if (intervalRef.current) {
               clearInterval(intervalRef.current);
               intervalRef.current = null;
             }
-            return {
-              ...prev,
-              isPlaying: false,
-              isComplete: true,
-            };
+            return { ...prev, isPlaying: false, isComplete: true };
           }
           return {
             ...prev,
@@ -119,8 +192,10 @@ export function useAlgorithmDemo(
       currentStep: 0,
       isPlaying: false,
       isComplete: false,
+      isLoading: false,
       currentSnapshot: config.snapshots[0],
       error: null,
+      isDegraded: false,
     });
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -131,13 +206,14 @@ export function useAlgorithmDemo(
   const play = useCallback(() => {
     if (!config) return;
     if (state.isComplete) {
-      // 如果已完成，从头开始
       setState({
         currentStep: 0,
         isPlaying: true,
         isComplete: false,
+        isLoading: false,
         currentSnapshot: config.snapshots[0],
         error: null,
+        isDegraded: false,
       });
     } else {
       setState((prev) => ({ ...prev, isPlaying: true }));
@@ -160,8 +236,10 @@ export function useAlgorithmDemo(
         currentStep: clampedStep,
         isPlaying: false,
         isComplete: clampedStep === config.snapshots.length - 1,
+        isLoading: false,
         currentSnapshot: config.snapshots[clampedStep],
         error: null,
+        isDegraded: false,
       });
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -173,6 +251,7 @@ export function useAlgorithmDemo(
 
   return {
     ...state,
+    config,
     next,
     prev,
     reset,
