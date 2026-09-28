@@ -1,23 +1,47 @@
 import { useState } from 'react';
 import { algorithms, categories, Algorithm, Category } from './data/algorithms';
+import { translations, Lang } from './i18n/translations';
 
 function App() {
+  const [lang, setLang] = useState<Lang>('zh');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedAlgorithm, setSelectedAlgorithm] = useState<Algorithm | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
+  const t = translations[lang];
+
   const filteredAlgorithms = algorithms.filter((algo) => {
     const matchCategory = selectedCategory === 'all' || algo.category === selectedCategory;
+    const searchLower = searchQuery.toLowerCase();
     const matchSearch =
       searchQuery === '' ||
-      algo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      algo.nameEn.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      algo.description.toLowerCase().includes(searchQuery.toLowerCase());
+      algo.name.toLowerCase().includes(searchLower) ||
+      algo.nameEn.toLowerCase().includes(searchLower) ||
+      algo.description.toLowerCase().includes(searchLower) ||
+      algo.descriptionEn.toLowerCase().includes(searchLower);
     return matchCategory && matchSearch;
   });
 
   const getCategoryInfo = (categoryId: string): Category => {
     return categories.find((c) => c.id === categoryId)!;
+  };
+
+  const getAlgoName = (algo: Algorithm) => (lang === 'zh' ? algo.name : algo.nameEn);
+  const getAlgoSubName = (algo: Algorithm) => (lang === 'zh' ? algo.nameEn : algo.name);
+  const getAlgoDescription = (algo: Algorithm) =>
+    lang === 'zh' ? algo.description : algo.descriptionEn;
+  const getAlgoPrinciple = (algo: Algorithm) =>
+    lang === 'zh' ? algo.principle : algo.principleEn;
+  const getAlgoUseCases = (algo: Algorithm) =>
+    lang === 'zh' ? algo.useCases : algo.useCasesEn;
+  const getAlgoPros = (algo: Algorithm) => (lang === 'zh' ? algo.pros : algo.prosEn);
+  const getAlgoCons = (algo: Algorithm) => (lang === 'zh' ? algo.cons : algo.consEn);
+  const getCategoryName = (cat: Category) => (lang === 'zh' ? cat.name : cat.nameEn);
+  const getCategoryDescription = (cat: Category) =>
+    lang === 'zh' ? cat.description : cat.descriptionEn;
+
+  const toggleLang = () => {
+    setLang(lang === 'zh' ? 'en' : 'zh');
   };
 
   return (
@@ -27,11 +51,11 @@ function App() {
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-pink-600/20"></div>
         <div className="relative max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-              🤖 机器学习算法学习指南
+            <h1 className="text-3xl sm:text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+              🤖 {t.title}
             </h1>
-            <p className="mt-4 text-lg text-slate-300 max-w-3xl mx-auto">
-              系统学习 {algorithms.length} 种常用机器学习算法，涵盖监督学习、无监督学习、集成学习、深度学习和强化学习五大类别
+            <p className="mt-4 text-base sm:text-lg text-slate-300 max-w-3xl mx-auto">
+              {t.subtitle(algorithms.length, categories.length)}
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               {categories.map((cat) => (
@@ -40,12 +64,21 @@ function App() {
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium"
                   style={{ backgroundColor: cat.color + '30', color: cat.color }}
                 >
-                  {cat.icon} {cat.name}
+                  {cat.icon} {getCategoryName(cat)}
                 </span>
               ))}
             </div>
           </div>
         </div>
+
+        {/* Language Toggle Button */}
+        <button
+          onClick={toggleLang}
+          className="absolute top-4 right-4 sm:top-6 sm:right-6 flex items-center gap-2 px-4 py-2 bg-slate-800/80 backdrop-blur-sm border border-slate-600 rounded-full text-sm font-medium text-slate-200 hover:bg-slate-700 hover:border-slate-500 transition-all shadow-lg"
+        >
+          <span className="text-base">🌐</span>
+          <span>{t.language}</span>
+        </button>
       </header>
 
       {/* Main Content */}
@@ -61,7 +94,7 @@ function App() {
                   : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
               }`}
             >
-              全部 ({algorithms.length})
+              {t.all} ({algorithms.length})
             </button>
             {categories.map((cat) => {
               const count = algorithms.filter((a) => a.category === cat.id).length;
@@ -80,7 +113,7 @@ function App() {
                       : {}
                   }
                 >
-                  {cat.icon} {cat.name} ({count})
+                  {cat.icon} {getCategoryName(cat)} ({count})
                 </button>
               );
             })}
@@ -88,7 +121,7 @@ function App() {
           <div className="relative">
             <input
               type="text"
-              placeholder="搜索算法..."
+              placeholder={t.searchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 pr-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
@@ -124,28 +157,32 @@ function App() {
                     <span className="text-2xl">{algo.icon}</span>
                     <div>
                       <h3 className="font-bold text-white group-hover:text-blue-300 transition-colors">
-                        {algo.name}
+                        {getAlgoName(algo)}
                       </h3>
-                      <p className="text-xs text-slate-400">{algo.nameEn}</p>
+                      <p className="text-xs text-slate-400">{getAlgoSubName(algo)}</p>
                     </div>
                   </div>
                   <span
-                    className="text-xs px-2 py-1 rounded-full font-medium"
+                    className="text-xs px-2 py-1 rounded-full font-medium whitespace-nowrap"
                     style={{ backgroundColor: cat.color + '20', color: cat.color }}
                   >
-                    {cat.name}
+                    {getCategoryName(cat)}
                   </span>
                 </div>
-                <p className="mt-3 text-sm text-slate-300 line-clamp-2">{algo.description}</p>
+                <p className="mt-3 text-sm text-slate-300 line-clamp-2">
+                  {getAlgoDescription(algo)}
+                </p>
                 {algo.formula && (
                   <div className="mt-3 px-3 py-2 bg-slate-900/50 rounded-lg">
                     <code className="text-xs text-emerald-400 font-mono">{algo.formula}</code>
                   </div>
                 )}
                 <div className="mt-4 flex items-center justify-between text-xs text-slate-500">
-                  <span>复杂度: {algo.complexity}</span>
+                  <span>
+                    {t.complexity}: {algo.complexity}
+                  </span>
                   <span className="text-blue-400 group-hover:text-blue-300">
-                    查看详情 →
+                    {t.viewDetails}
                   </span>
                 </div>
               </div>
@@ -156,7 +193,7 @@ function App() {
         {filteredAlgorithms.length === 0 && (
           <div className="text-center py-16">
             <span className="text-4xl">🔍</span>
-            <p className="mt-4 text-slate-400">没有找到匹配的算法</p>
+            <p className="mt-4 text-slate-400">{t.noResults}</p>
           </div>
         )}
 
@@ -164,7 +201,7 @@ function App() {
         <section className="mt-16">
           <h2 className="text-2xl font-bold text-center mb-8">
             <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              📚 算法分类概览
+              📚 {t.categoryOverview}
             </span>
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -178,11 +215,15 @@ function App() {
                   <div className="flex items-center gap-3 mb-3">
                     <span className="text-2xl">{cat.icon}</span>
                     <div>
-                      <h3 className="font-bold text-white">{cat.name}</h3>
-                      <p className="text-xs text-slate-400">{cat.nameEn}</p>
+                      <h3 className="font-bold text-white">{getCategoryName(cat)}</h3>
+                      <p className="text-xs text-slate-400">
+                        {lang === 'zh' ? cat.nameEn : cat.name}
+                      </p>
                     </div>
                   </div>
-                  <p className="text-sm text-slate-300 mb-3">{cat.description}</p>
+                  <p className="text-sm text-slate-300 mb-3">
+                    {getCategoryDescription(cat)}
+                  </p>
                   <div className="flex flex-wrap gap-1.5">
                     {catAlgos.map((algo) => (
                       <span
@@ -190,7 +231,7 @@ function App() {
                         onClick={() => setSelectedAlgorithm(algo)}
                         className="text-xs px-2 py-1 rounded-md bg-slate-700/50 text-slate-300 cursor-pointer hover:bg-slate-700 transition-colors"
                       >
-                        {algo.icon} {algo.name}
+                        {algo.icon} {getAlgoName(algo)}
                       </span>
                     ))}
                   </div>
@@ -204,50 +245,21 @@ function App() {
         <section className="mt-16">
           <h2 className="text-2xl font-bold text-center mb-8">
             <span className="bg-gradient-to-r from-emerald-400 to-blue-400 bg-clip-text text-transparent">
-              🗺️ 推荐学习路径
+              🗺️ {t.learningPath}
             </span>
           </h2>
           <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-6">
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              {[
-                {
-                  step: 1,
-                  title: '基础入门',
-                  desc: '线性回归 → 逻辑回归 → 决策树',
-                  color: '#3B82F6',
-                },
-                {
-                  step: 2,
-                  title: '经典算法',
-                  desc: 'SVM → KNN → 朴素贝叶斯',
-                  color: '#10B981',
-                },
-                {
-                  step: 3,
-                  title: '集成方法',
-                  desc: '随机森林 → 梯度提升 → XGBoost',
-                  color: '#F59E0B',
-                },
-                {
-                  step: 4,
-                  title: '深度学习',
-                  desc: 'MLP → CNN → RNN → Transformer',
-                  color: '#8B5CF6',
-                },
-                {
-                  step: 5,
-                  title: '高级主题',
-                  desc: 'GAN → 强化学习 → PPO',
-                  color: '#EF4444',
-                },
-              ].map((item, idx) => (
-                <div key={item.step} className="relative">
+              {t.steps.map((item, idx) => (
+                <div key={idx} className="relative">
                   <div className="flex items-center gap-2 mb-2">
                     <span
                       className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                      style={{ backgroundColor: item.color }}
+                      style={{
+                        backgroundColor: categories[idx]?.color || '#3B82F6',
+                      }}
                     >
-                      {item.step}
+                      {idx + 1}
                     </span>
                     <span className="font-semibold text-white text-sm">{item.title}</span>
                   </div>
@@ -271,16 +283,20 @@ function App() {
           onClick={() => setSelectedAlgorithm(null)}
         >
           <div
-            className="bg-slate-800 border border-slate-700 rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto shadow-2xl"
+            className="bg-slate-800 border border-slate-700 rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto shadow-2xl animate-[modalIn_0.2s_ease-out]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="sticky top-0 bg-slate-800/95 backdrop-blur-sm border-b border-slate-700 p-5 flex items-center justify-between rounded-t-2xl">
+            <div className="sticky top-0 bg-slate-800/95 backdrop-blur-sm border-b border-slate-700 p-5 flex items-center justify-between rounded-t-2xl z-10">
               <div className="flex items-center gap-3">
                 <span className="text-3xl">{selectedAlgorithm.icon}</span>
                 <div>
-                  <h2 className="text-xl font-bold text-white">{selectedAlgorithm.name}</h2>
-                  <p className="text-sm text-slate-400">{selectedAlgorithm.nameEn}</p>
+                  <h2 className="text-xl font-bold text-white">
+                    {getAlgoName(selectedAlgorithm)}
+                  </h2>
+                  <p className="text-sm text-slate-400">
+                    {getAlgoSubName(selectedAlgorithm)}
+                  </p>
                 </div>
               </div>
               <button
@@ -303,25 +319,25 @@ function App() {
                   }}
                 >
                   {getCategoryInfo(selectedAlgorithm.category).icon}{' '}
-                  {getCategoryInfo(selectedAlgorithm.category).name}
+                  {getCategoryName(getCategoryInfo(selectedAlgorithm.category))}
                 </span>
               </div>
 
               {/* Description */}
               <div>
                 <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  📝 简介
+                  📝 {t.intro}
                 </h3>
-                <p className="text-slate-200">{selectedAlgorithm.description}</p>
+                <p className="text-slate-200">{getAlgoDescription(selectedAlgorithm)}</p>
               </div>
 
               {/* Principle */}
               <div>
                 <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  🔬 核心原理
+                  🔬 {t.principle}
                 </h3>
                 <p className="text-slate-300 text-sm leading-relaxed">
-                  {selectedAlgorithm.principle}
+                  {getAlgoPrinciple(selectedAlgorithm)}
                 </p>
               </div>
 
@@ -329,7 +345,7 @@ function App() {
               {selectedAlgorithm.formula && (
                 <div>
                   <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    📐 核心公式
+                    📐 {t.formula}
                   </h3>
                   <div className="bg-slate-900/70 rounded-lg p-4">
                     <code className="text-emerald-400 font-mono text-sm">
@@ -342,10 +358,10 @@ function App() {
               {/* Use Cases */}
               <div>
                 <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  💼 应用场景
+                  💼 {t.useCases}
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {selectedAlgorithm.useCases.map((uc, idx) => (
+                  {getAlgoUseCases(selectedAlgorithm).map((uc, idx) => (
                     <span
                       key={idx}
                       className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-lg text-sm text-blue-300"
@@ -359,9 +375,9 @@ function App() {
               {/* Pros & Cons */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <h3 className="text-sm font-semibold text-emerald-400 mb-2">✅ 优点</h3>
+                  <h3 className="text-sm font-semibold text-emerald-400 mb-2">✅ {t.pros}</h3>
                   <ul className="space-y-1.5">
-                    {selectedAlgorithm.pros.map((pro, idx) => (
+                    {getAlgoPros(selectedAlgorithm).map((pro, idx) => (
                       <li key={idx} className="text-sm text-slate-300 flex items-start gap-2">
                         <span className="text-emerald-400 mt-0.5">•</span>
                         {pro}
@@ -370,9 +386,9 @@ function App() {
                   </ul>
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-red-400 mb-2">❌ 缺点</h3>
+                  <h3 className="text-sm font-semibold text-red-400 mb-2">❌ {t.cons}</h3>
                   <ul className="space-y-1.5">
-                    {selectedAlgorithm.cons.map((con, idx) => (
+                    {getAlgoCons(selectedAlgorithm).map((con, idx) => (
                       <li key={idx} className="text-sm text-slate-300 flex items-start gap-2">
                         <span className="text-red-400 mt-0.5">•</span>
                         {con}
@@ -384,7 +400,7 @@ function App() {
 
               {/* Complexity */}
               <div className="bg-slate-900/50 rounded-lg p-4 flex items-center justify-between">
-                <span className="text-sm text-slate-400">⏱️ 时间复杂度</span>
+                <span className="text-sm text-slate-400">⏱️ {t.timeComplexity}</span>
                 <code className="text-amber-400 font-mono text-sm">
                   {selectedAlgorithm.complexity}
                 </code>
@@ -398,11 +414,9 @@ function App() {
       <footer className="border-t border-slate-700/50 mt-16">
         <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 text-center">
           <p className="text-slate-500 text-sm">
-            🎓 机器学习算法学习指南 | 共收录 {algorithms.length} 种算法，涵盖 {categories.length} 大类别
+            🎓 {t.footer(algorithms.length, categories.length)}
           </p>
-          <p className="text-slate-600 text-xs mt-2">
-            点击任意算法卡片查看详细原理、应用场景和优缺点分析
-          </p>
+          <p className="text-slate-600 text-xs mt-2">{t.footerHint}</p>
         </div>
       </footer>
     </div>
