@@ -1,5 +1,6 @@
 import { LRUCache } from './LRUCache';
 import { logger } from './Logger';
+import { apiRequest, USE_REAL_API } from './apiClient';
 import {
   DemoConfig,
   DemoApiResponse,
@@ -23,15 +24,81 @@ const localDataSource: Record<string, DemoConfig> = {
 const demoCache = new LRUCache<DemoConfig>(30, 10 * 60 * 1000);
 
 class DemoService {
-  async fetchDemoConfig(
+  /**
+   * 从真实后端 API 获取演示配置
+   */
+  private async fetchFromRealAPI(
     algorithmId: string,
     params?: Record<string, unknown>
   ): Promise<DemoApiResponse> {
     const requestId = logger.newRequestId();
     const startTime = performance.now();
+    
+    try {
+      const response = await apiRequest<{
+        status: string;
+        result: DemoConfig;
+        responseTimeMs: number;
+        cached: boolean;
+        requestId: string;
+      }>(`/api/demos/${algorithmId}`, {
+        method: 'POST',
+        body: { params },
+      });
+      
+      const responseTime = Math.round(performance.now() - startTime);
+      
+      logger.info('DEMO_SERVICE', 'Real API response', {
+        algorithmId,
+        responseTimeMs: responseTime,
+        cached: response.cached,
+        requestId,
+      }, requestId);
+      
+      return {
+        status: response.status as 'success' | 'error' | 'timeout',
+        result: response.result,
+        responseTimeMs: responseTime,
+        cached: response.cached,
+        requestId,
+      };
+    } catch (error) {
+      const responseTime = Math.round(performance.now() - startTime);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      
+      logger.error('DEMO_SERVICE', 'Real API failed', {
+        algorithmId,
+        error: errorMsg,
+        responseTimeMs: responseTime,
+        requestId,
+      }, requestId);
+      
+      return {
+        status: 'error',
+        result: null,
+        error: errorMsg,
+        responseTimeMs: responseTime,
+        cached: false,
+        requestId,
+      };
+    }
+  }
+
+  async fetchDemoConfig(
+    algorithmId: string,
+    params?: Record<string, unknown>
+  ): Promise<DemoApiResponse> {
+    // 如果启用真实 API，直接调用后端
+    if (USE_REAL_API) {
+      return this.fetchFromRealAPI(algorithmId, params);
+    }
+
+    // 否则使用模拟数据
+    const requestId = logger.newRequestId();
+    const startTime = performance.now();
     const cacheKey = LRUCache.generateKey(algorithmId, params);
 
-    logger.debug('DEMO_SERVICE', 'Fetching demo config', {
+    logger.debug('DEMO_SERVICE', 'Fetching demo config (simulated)', {
       algorithmId,
       cacheKey,
       requestId,

@@ -17,6 +17,7 @@
 
 import { LRUCache } from './LRUCache';
 import { logger } from './Logger';
+import { apiRequest, USE_REAL_API } from './apiClient';
 import type { LLMRequestConfig, LLMResponse, LLMLogEntry } from '../types/demo';
 
 // ==================== 配置 ====================
@@ -165,6 +166,72 @@ class LLMService {
    * 5. 写入缓存
    * 6. 记录日志
    */
+  /**
+   * 从真实后端 API 生成解说词
+   */
+  private async generateFromRealAPI(
+    context: ExplanationPrompt,
+    language: 'zh' | 'en',
+    model?: string
+  ): Promise<LLMResponse> {
+    const requestId = logger.newRequestId();
+    const startTime = performance.now();
+    
+    try {
+      const response = await apiRequest<{
+        status: string;
+        text?: string;
+        error?: string;
+        responseTimeMs: number;
+        tokensUsed?: number;
+        requestId: string;
+      }>('/api/llm/explain', {
+        method: 'POST',
+        body: {
+          algorithmName: context.algorithmName,
+          stepTitle: context.stepTitle,
+          technicalDescription: context.technicalDescription,
+          stepIndex: context.stepIndex,
+          totalSteps: context.totalSteps,
+          language,
+          model,
+        },
+      });
+      
+      const responseTime = Math.round(performance.now() - startTime);
+      
+      logger.info('LLM_SERVICE', 'Real API response', {
+        responseTimeMs: responseTime,
+        requestId,
+      }, requestId);
+      
+      return {
+        status: response.status as 'success' | 'error' | 'timeout',
+        text: response.text,
+        error: response.error,
+        responseTimeMs: responseTime,
+        tokensUsed: response.tokensUsed,
+        requestId,
+      };
+    } catch (error) {
+      const responseTime = Math.round(performance.now() - startTime);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      
+      logger.error('LLM_SERVICE', 'Real API failed', {
+        error: errorMsg,
+        responseTimeMs: responseTime,
+        requestId,
+      }, requestId);
+      
+      return {
+        status: 'error',
+        error: errorMsg,
+        responseTimeMs: responseTime,
+        requestId,
+      };
+    }
+  }
+
   async generateExplanation(
     context: ExplanationPrompt,
     language: 'zh' | 'en',
@@ -174,6 +241,12 @@ class LLMService {
       forceRegenerate?: boolean;
     }
   ): Promise<LLMResponse> {
+    // 如果启用真实 API，直接调用后端
+    if (USE_REAL_API) {
+      return this.generateFromRealAPI(context, language, options?.model);
+    }
+
+    // 否则使用模拟实现
     const requestId = logger.newRequestId();
     const startTime = performance.now();
     const model = options?.model || DEFAULT_MODEL;
