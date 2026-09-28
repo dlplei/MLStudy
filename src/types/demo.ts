@@ -28,6 +28,70 @@ export interface StepMetadata {
   cacheKey?: string;
   /** 数据版本号 */
   version: string;
+  /** 通俗解说词来源 */
+  explanationSource?: 'preset' | 'llm' | 'fallback';
+  /** LLM 生成耗时（毫秒） */
+  llmGenerationTimeMs?: number;
+  /** LLM 模型名称 */
+  llmModel?: string;
+}
+
+/** LLM 请求配置 */
+export interface LLMRequestConfig {
+  /** 模型名称 */
+  model: string;
+  /** 提示词 */
+  prompt: string;
+  /** 语言 */
+  language: 'zh' | 'en';
+  /** 最大 token 数 */
+  maxTokens?: number;
+  /** 温度参数 */
+  temperature?: number;
+  /** 超时时间（毫秒） */
+  timeoutMs?: number;
+}
+
+/** LLM 响应 */
+export interface LLMResponse {
+  /** 响应状态 */
+  status: 'success' | 'error' | 'timeout';
+  /** 生成的文本 */
+  text?: string;
+  /** 错误信息 */
+  error?: string;
+  /** 响应耗时（毫秒） */
+  responseTimeMs: number;
+  /** 使用的 token 数 */
+  tokensUsed?: number;
+  /** 请求 ID */
+  requestId: string;
+}
+
+/** LLM 日志条目 */
+export interface LLMLogEntry {
+  /** 请求 ID */
+  request_id: string;
+  /** 模型名称 */
+  model: string;
+  /** 算法名称 */
+  algorithm_name: string;
+  /** 步骤索引 */
+  step_index: number;
+  /** 语言 */
+  language: 'zh' | 'en';
+  /** 执行耗时（毫秒） */
+  execution_time_ms: number;
+  /** 状态 */
+  status: 'success' | 'error' | 'timeout';
+  /** 使用的 token 数 */
+  tokens_used?: number;
+  /** 错误信息 */
+  error?: string;
+  /** 提示词长度 */
+  prompt_length: number;
+  /** 响应长度 */
+  response_length?: number;
 }
 
 // ==================== 核心数据契约 ====================
@@ -50,7 +114,7 @@ export interface DemoSnapshot {
   /** 图表渲染所需的核心数据 */
   visualizationData: Record<string, unknown>;
   /** 步骤元信息 */
-  metadata: StepMetadata;
+  stepMeta: StepMetadata;
 }
 
 /**
@@ -101,7 +165,7 @@ export interface DemoApiResponse<T = DemoConfig> {
   /** 响应状态码 */
   status: 'success' | 'error' | 'timeout';
   /** 响应数据 */
-  data: T | null;
+  result: T | null;
   /** 错误信息 */
   error?: string;
   /** 响应耗时 */

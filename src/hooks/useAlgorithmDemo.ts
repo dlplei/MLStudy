@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { DemoConfig, DemoState, DemoActions, DemoSnapshot } from '../types/demo';
+import { DemoConfig, DemoState, DemoActions, DemoSnapshot, StepDescription } from '../types/demo';
 import { demoService } from '../services/DemoService';
+import { llmService } from '../services/LLMService';
 import { logger } from '../services/Logger';
 
 /**
@@ -52,8 +53,8 @@ export function useAlgorithmDemo(
 
         if (cancelled) return;
 
-        if (response.status === 'success' && response.data) {
-          const loadedConfig = response.data;
+        if (response.status === 'success' && response.result) {
+          const loadedConfig = response.result;
           setConfig(loadedConfig);
           setState({
             currentStep: 0,

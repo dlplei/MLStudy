@@ -74,7 +74,7 @@ function createSnapshot(
     plainExplanation,
     actionLabel,
     visualizationData,
-    metadata: {
+    stepMeta: {
       generationTimeMs: 0,
       source: 'compute',
       version: '2.0.0',

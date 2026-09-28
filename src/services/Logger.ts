@@ -5,6 +5,8 @@
  * 日志格式遵循结构化标准，便于后续接入日志分析系统。
  */
 
+import type { LLMLogEntry } from '../types/demo';
+
 export type LogLevel = 'DEBUG' | 'INFO' | 'WARN' | 'ERROR';
 
 export interface LogEntry {
@@ -27,6 +29,8 @@ export interface DemoLogEntry {
   total_steps: number;
   error?: string;
 }
+
+export type { LLMLogEntry };
 
 class Logger {
   private logs: LogEntry[] = [];
@@ -88,6 +92,12 @@ class Logger {
   logDemoRequest(entry: DemoLogEntry): void {
     const level = entry.error ? 'ERROR' : 'INFO';
     this.log(level, 'DEMO_REQUEST', `Demo request: ${entry.algorithm_name}`, entry as unknown as Record<string, unknown>, entry.request_id);
+  }
+
+  /** 记录 LLM 调用日志（结构化格式） */
+  logLLMCall(entry: LLMLogEntry): void {
+    const level = entry.status === 'error' ? 'ERROR' : entry.status === 'timeout' ? 'WARN' : 'INFO';
+    this.log(level, 'LLM_CALL', `LLM call: ${entry.model} for ${entry.algorithm_name}[${entry.step_index}]`, entry as unknown as Record<string, unknown>, entry.request_id);
   }
 
   newRequestId(): string {
