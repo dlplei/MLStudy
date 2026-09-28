@@ -8,37 +8,29 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from 'recharts';
-import { KMeansSnapshotData, KMeansPoint } from '../../types/demo';
+import { KMeansPoint, KMeansVisualizationData } from '../../types/demo';
 import { Lang } from '../../i18n/translations';
 
 interface KMeansVisualizerProps {
-  data: KMeansSnapshotData;
+  visualizationData: KMeansVisualizationData;
   lang: Lang;
 }
 
 const CLUSTER_COLORS = ['#3B82F6', '#10B981', '#F59E0B'];
 
-/**
- * K-Means 聚类可视化组件
- * 使用散点图展示数据点、聚类中心和分配状态
- */
-export function KMeansVisualizer({ data, lang }: KMeansVisualizerProps) {
-  const { points, centers, converged } = data;
+export function KMeansVisualizer({ visualizationData, lang }: KMeansVisualizerProps) {
+  const { points, centers, converged } = visualizationData;
 
-  // 按簇分组数据
   const clusteredData = points.map((p: KMeansPoint) => ({
     ...p,
     fill: p.cluster >= 0 ? CLUSTER_COLORS[p.cluster] : '#94A3B8',
   }));
 
-  // 未分配的点
-  const unassigned = clusteredData.filter((p) => p.cluster === -1);
-  // 各簇的点
-  const cluster0 = clusteredData.filter((p) => p.cluster === 0);
-  const cluster1 = clusteredData.filter((p) => p.cluster === 1);
-  const cluster2 = clusteredData.filter((p) => p.cluster === 2);
+  const unassigned = clusteredData.filter((p: KMeansPoint) => p.cluster === -1);
+  const cluster0 = clusteredData.filter((p: KMeansPoint) => p.cluster === 0);
+  const cluster1 = clusteredData.filter((p: KMeansPoint) => p.cluster === 1);
+  const cluster2 = clusteredData.filter((p: KMeansPoint) => p.cluster === 2);
 
-  // 中心点数据
   const centerData = centers.map((c: { x: number; y: number; id: number }) => ({
     ...c,
     name: `C${c.id}`,
@@ -76,75 +68,22 @@ export function KMeansVisualizer({ data, lang }: KMeansVisualizerProps) {
         <ResponsiveContainer width="100%" height={280}>
           <ScatterChart margin={{ top: 10, right: 10, bottom: 10, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-            <XAxis
-              type="number"
-              dataKey="x"
-              domain={[0, 10]}
-              tick={{ fill: '#94A3B8', fontSize: 11 }}
-              stroke="#475569"
-            />
-            <YAxis
-              type="number"
-              dataKey="y"
-              domain={[0, 10]}
-              tick={{ fill: '#94A3B8', fontSize: 11 }}
-              stroke="#475569"
-            />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: '#1E293B',
-                border: '1px solid #475569',
-                borderRadius: '8px',
-                fontSize: '12px',
-                color: '#E2E8F0',
-              }}
-              formatter={(value: number, name: string) => [value.toFixed(2), name]}
-            />
+            <XAxis type="number" dataKey="x" domain={[0, 10]} tick={{ fill: '#94A3B8', fontSize: 11 }} stroke="#475569" />
+            <YAxis type="number" dataKey="y" domain={[0, 10]} tick={{ fill: '#94A3B8', fontSize: 11 }} stroke="#475569" />
+            <Tooltip contentStyle={{ backgroundColor: '#1E293B', border: '1px solid #475569', borderRadius: '8px', fontSize: '12px', color: '#E2E8F0' }} formatter={(value: number, name: string) => [value.toFixed(2), name]} />
 
-            {/* 未分配的点 */}
-            {unassigned.length > 0 && (
-              <Scatter
-                name={lang === 'zh' ? '数据点' : 'Points'}
-                data={unassigned}
-                fill="#94A3B8"
-                stroke="#64748B"
-                strokeWidth={1}
-                r={5}
-              />
-            )}
+            {unassigned.length > 0 && <Scatter name={lang === 'zh' ? '数据点' : 'Points'} data={unassigned} fill="#94A3B8" stroke="#64748B" strokeWidth={1} r={5} />}
+            {cluster0.length > 0 && <Scatter name="Cluster 0" data={cluster0} fill={CLUSTER_COLORS[0]} r={5} opacity={0.8} />}
+            {cluster1.length > 0 && <Scatter name="Cluster 1" data={cluster1} fill={CLUSTER_COLORS[1]} r={5} opacity={0.8} />}
+            {cluster2.length > 0 && <Scatter name="Cluster 2" data={cluster2} fill={CLUSTER_COLORS[2]} r={5} opacity={0.8} />}
+            {centerData.length > 0 && <Scatter name={lang === 'zh' ? '聚类中心' : 'Centers'} data={centerData} fill="#EF4444" stroke="#FCA5A5" strokeWidth={2} r={8} shape="star" />}
 
-            {/* 各簇的点 */}
-            {cluster0.length > 0 && (
-              <Scatter name="Cluster 0" data={cluster0} fill={CLUSTER_COLORS[0]} r={5} opacity={0.8} />
-            )}
-            {cluster1.length > 0 && (
-              <Scatter name="Cluster 1" data={cluster1} fill={CLUSTER_COLORS[1]} r={5} opacity={0.8} />
-            )}
-            {cluster2.length > 0 && (
-              <Scatter name="Cluster 2" data={cluster2} fill={CLUSTER_COLORS[2]} r={5} opacity={0.8} />
-            )}
-
-            {/* 聚类中心 */}
-            {centerData.length > 0 && (
-              <Scatter
-                name={lang === 'zh' ? '聚类中心' : 'Centers'}
-                data={centerData}
-                fill="#EF4444"
-                stroke="#FCA5A5"
-                strokeWidth={2}
-                r={8}
-                shape="star"
-              />
-            )}
-
-            {/* 网格参考线 */}
             <ReferenceLine x={5} stroke="#334155" strokeDasharray="2 2" />
             <ReferenceLine y={5} stroke="#334155" strokeDasharray="2 2" />
           </ScatterChart>
         </ResponsiveContainer>
       </div>
 
-      {/* 统计信息 */}
       <div className="grid grid-cols-3 gap-2">
         <div className="bg-slate-900/50 rounded-lg p-2 text-center">
           <div className="text-xs text-slate-400">{lang === 'zh' ? '数据点' : 'Points'}</div>
@@ -157,9 +96,7 @@ export function KMeansVisualizer({ data, lang }: KMeansVisualizerProps) {
         <div className="bg-slate-900/50 rounded-lg p-2 text-center">
           <div className="text-xs text-slate-400">{lang === 'zh' ? '状态' : 'Status'}</div>
           <div className={`text-sm font-bold ${converged ? 'text-emerald-400' : 'text-amber-400'}`}>
-            {converged
-              ? lang === 'zh' ? '已收敛' : 'Done'
-              : lang === 'zh' ? '迭代中' : 'Running'}
+            {converged ? (lang === 'zh' ? '已收敛' : 'Done') : (lang === 'zh' ? '迭代中' : 'Running')}
           </div>
         </div>
       </div>

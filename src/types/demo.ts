@@ -1,42 +1,87 @@
 /**
- * 算法演示数据结构定义
- * 所有演示算法都遵循此统一接口，确保前端消费数据时的稳定性
+ * 算法演示数据结构定义 (Data Contract v2)
+ * 
+ * 统一的数据契约，确保无论数据来自本地 JSON 还是后端 API，
+ * 前端消费的数据结构绝对稳定。
+ * 
+ * Phase 2 更新：
+ * - 新增 plainExplanation: 面向非技术人员的通俗解说词
+ * - 新增 actionLabel: 按钮文案（如"继续迭代"）
+ * - 新增 visualizationData: 图表渲染所需的核心数据
+ * - 新增 metadata: 步骤元信息（耗时、来源等）
  */
 
-// 演示步骤中的描述文本
+// ==================== 基础类型 ====================
+
 export interface StepDescription {
   zh: string;
   en: string;
 }
 
-// 演示快照（某一时刻的状态）
+/** 步骤元信息 - 用于日志追踪和调试 */
+export interface StepMetadata {
+  /** 数据生成耗时（毫秒） */
+  generationTimeMs: number;
+  /** 数据来源：'cache' | 'compute' | 'api' */
+  source: 'cache' | 'compute' | 'api';
+  /** 缓存命中时的缓存 Key */
+  cacheKey?: string;
+  /** 数据版本号 */
+  version: string;
+}
+
+// ==================== 核心数据契约 ====================
+
+/**
+ * 演示快照 - 某一时刻的完整状态
+ * 这是前端消费的核心数据结构，必须保持稳定
+ */
 export interface DemoSnapshot {
+  /** 当前步骤索引（从0开始） */
   stepIndex: number;
+  /** 步骤标题 */
   title: StepDescription;
+  /** 技术性描述（面向开发者/学习者） */
   description: StepDescription;
-  // 不同算法有不同的数据字段，具体类型在消费时断言
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  data: any;
+  /** 通俗解说词（面向非技术人员，Phase 3 将由 LLM 生成） */
+  plainExplanation: StepDescription;
+  /** 按钮文案 */
+  actionLabel: StepDescription;
+  /** 图表渲染所需的核心数据 */
+  visualizationData: Record<string, unknown>;
+  /** 步骤元信息 */
+  metadata: StepMetadata;
 }
 
-// 演示配置
+/**
+ * 演示配置 - 一个算法的完整演示定义
+ */
 export interface DemoConfig {
+  /** 算法唯一标识 */
   algorithmId: string;
+  /** 演示标题 */
   title: StepDescription;
+  /** 总步骤数 */
   totalSteps: number;
+  /** 所有步骤的快照数据 */
   snapshots: DemoSnapshot[];
+  /** 演示参数（用于缓存 Key 生成） */
+  params?: Record<string, unknown>;
 }
 
-// 演示状态
+// ==================== 演示状态 ====================
+
 export interface DemoState {
   currentStep: number;
   isPlaying: boolean;
   isComplete: boolean;
+  isLoading: boolean;
   currentSnapshot: DemoSnapshot | null;
   error: string | null;
+  /** 是否处于降级模式 */
+  isDegraded: boolean;
 }
 
-// 演示操作
 export interface DemoActions {
   next: () => void;
   prev: () => void;
@@ -46,23 +91,43 @@ export interface DemoActions {
   goToStep: (step: number) => void;
 }
 
+// ==================== API 响应契约 ====================
+
+/**
+ * 模拟后端 API 的统一响应格式
+ * 未来接入真实后端时，前端无需修改消费逻辑
+ */
+export interface DemoApiResponse<T = DemoConfig> {
+  /** 响应状态码 */
+  status: 'success' | 'error' | 'timeout';
+  /** 响应数据 */
+  data: T | null;
+  /** 错误信息 */
+  error?: string;
+  /** 响应耗时 */
+  responseTimeMs: number;
+  /** 是否命中缓存 */
+  cached: boolean;
+  /** 请求追踪 ID */
+  requestId: string;
+}
+
 // ==================== 具体算法的数据类型 ====================
 
-// K-Means 数据点
+// K-Means
 export interface KMeansPoint {
   x: number;
   y: number;
-  cluster: number; // -1 表示未分配
+  cluster: number;
 }
 
-// K-Means 快照数据
-export interface KMeansSnapshotData {
+export interface KMeansVisualizationData {
   points: KMeansPoint[];
   centers: { x: number; y: number; id: number }[];
   converged: boolean;
 }
 
-// 线性回归数据点
+// 线性回归
 export interface LinearRegressionPoint {
   x: number;
   y: number;
@@ -70,8 +135,7 @@ export interface LinearRegressionPoint {
   residual?: number;
 }
 
-// 线性回归快照数据
-export interface LinearRegressionSnapshotData {
+export interface LinearRegressionVisualizationData {
   points: LinearRegressionPoint[];
   weights: { w: number; b: number };
   loss: number;
@@ -79,16 +143,7 @@ export interface LinearRegressionSnapshotData {
   iteration: number;
 }
 
-// 决策树快照数据
-export interface DecisionTreeSnapshotData {
-  splitFeature: string;
-  splitThreshold: number;
-  leftSamples: number;
-  rightSamples: number;
-  depth: number;
-  nodes: TreeNode[];
-}
-
+// 决策树（预留）
 export interface TreeNode {
   id: string;
   type: 'split' | 'leaf';
@@ -100,8 +155,17 @@ export interface TreeNode {
   right?: string;
 }
 
-// KNN 快照数据
-export interface KNNSnapshotData {
+export interface DecisionTreeVisualizationData {
+  splitFeature: string;
+  splitThreshold: number;
+  leftSamples: number;
+  rightSamples: number;
+  depth: number;
+  nodes: TreeNode[];
+}
+
+// KNN（预留）
+export interface KNNVisualizationData {
   trainingPoints: { x: number; y: number; label: number }[];
   queryPoint: { x: number; y: number } | null;
   neighbors: { x: number; y: number; label: number; distance: number }[];
@@ -109,8 +173,8 @@ export interface KNNSnapshotData {
   k: number;
 }
 
-// 逻辑回归快照数据
-export interface LogisticRegressionSnapshotData {
+// 逻辑回归（预留）
+export interface LogisticRegressionVisualizationData {
   points: { x: number; y: number; label: number; predicted?: number }[];
   weights: { w1: number; w2: number; b: number };
   decisionBoundary: { x1: number; y1: number; x2: number; y2: number }[];
