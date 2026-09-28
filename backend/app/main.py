@@ -3,8 +3,17 @@ ML Algorithm Demo API - FastAPI 主入口
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.config import settings
+from contextlib import asynccontextmanager
+from app.config import settings, print_config
 from app.api import demos, llm
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """应用生命周期管理"""
+    # 启动时打印配置
+    print_config()
+    yield
+    # 关闭时的清理操作（如果有）
 
 # 创建 FastAPI 应用
 app = FastAPI(
@@ -12,7 +21,8 @@ app = FastAPI(
     description="机器学习算法演示 API - 提供算法演示数据和 AI 解说词生成服务",
     version="3.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    lifespan=lifespan
 )
 
 # 配置 CORS

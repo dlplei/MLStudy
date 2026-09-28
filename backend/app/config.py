@@ -42,3 +42,24 @@ class Settings(BaseSettings):
 
 # 全局配置实例
 settings = Settings()
+
+# 启动时打印配置信息（方便调试）
+def print_config():
+    """打印当前配置（隐藏敏感信息）"""
+    print("\n" + "="*60)
+    print("📋 应用配置")
+    print("="*60)
+    print(f"🔗 Ollama Base URL: {settings.OLLAMA_BASE_URL}")
+    print(f"🤖 Ollama Model: {settings.OLLAMA_MODEL}")
+    print(f"⏱️  Ollama Timeout: {settings.OLLAMA_TIMEOUT}s")
+    print(f"💾 Cache TTL: {settings.CACHE_TTL}s")
+    print(f"💾 Cache Max Size: {settings.CACHE_MAX_SIZE}")
+    print(f"📝 Log Level: {settings.LOG_LEVEL}")
+    print(f"📝 Log File: {settings.LOG_FILE}")
+    print(f"🌐 API Host: {settings.API_HOST}")
+    print(f"🌐 API Port: {settings.API_PORT}")
+    print(f"🔒 CORS Origins: {settings.CORS_ORIGINS}")
+    print("="*60 + "\n")
+
+# 如果需要在启动时打印配置，取消下面的注释
+# print_config()
