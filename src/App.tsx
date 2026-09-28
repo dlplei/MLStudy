@@ -1,12 +1,22 @@
 import { useState } from 'react';
 import { algorithms, categories, Algorithm, Category } from './data/algorithms';
 import { translations, Lang } from './i18n/translations';
+import { kmeansDemoConfig, linearRegressionDemoConfig } from './data/demos';
+import { DemoConfig } from './types/demo';
+import { AlgorithmDemoContainer } from './components/demos/AlgorithmDemoContainer';
+
+// 演示配置注册表 - 扩展新算法时只需在此添加
+const demoRegistry: Record<string, DemoConfig> = {
+  'kmeans': kmeansDemoConfig,
+  'linear-regression': linearRegressionDemoConfig,
+};
 
 function App() {
   const [lang, setLang] = useState<Lang>('zh');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedAlgorithm, setSelectedAlgorithm] = useState<Algorithm | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState<'detail' | 'demo'>('detail');
 
   const t = translations[lang];
 
@@ -40,8 +50,15 @@ function App() {
   const getCategoryDescription = (cat: Category) =>
     lang === 'zh' ? cat.description : cat.descriptionEn;
 
+  const hasDemo = (algoId: string) => algoId in demoRegistry;
+
   const toggleLang = () => {
     setLang(lang === 'zh' ? 'en' : 'zh');
+  };
+
+  const openAlgorithm = (algo: Algorithm) => {
+    setSelectedAlgorithm(algo);
+    setActiveTab('detail');
   };
 
   return (
@@ -67,6 +84,18 @@ function App() {
                   {cat.icon} {getCategoryName(cat)}
                 </span>
               ))}
+            </div>
+            {/* Demo badge */}
+            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-full">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span className="text-xs text-emerald-400 font-medium">
+                {lang === 'zh'
+                  ? `✨ ${Object.keys(demoRegistry).length} 种算法支持动态演示`
+                  : `✨ ${Object.keys(demoRegistry).length} algorithms with interactive demos`}
+              </span>
             </div>
           </div>
         </div>
@@ -146,10 +175,11 @@ function App() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredAlgorithms.map((algo) => {
             const cat = getCategoryInfo(algo.category);
+            const algoHasDemo = hasDemo(algo.id);
             return (
               <div
                 key={algo.id}
-                onClick={() => setSelectedAlgorithm(algo)}
+                onClick={() => openAlgorithm(algo)}
                 className="group relative bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 rounded-xl p-5 cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/10 hover:border-slate-600"
               >
                 <div className="flex items-start justify-between">
@@ -162,12 +192,19 @@ function App() {
                       <p className="text-xs text-slate-400">{getAlgoSubName(algo)}</p>
                     </div>
                   </div>
-                  <span
-                    className="text-xs px-2 py-1 rounded-full font-medium whitespace-nowrap"
-                    style={{ backgroundColor: cat.color + '20', color: cat.color }}
-                  >
-                    {getCategoryName(cat)}
-                  </span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span
+                      className="text-xs px-2 py-1 rounded-full font-medium whitespace-nowrap"
+                      style={{ backgroundColor: cat.color + '20', color: cat.color }}
+                    >
+                      {getCategoryName(cat)}
+                    </span>
+                    {algoHasDemo && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-medium">
+                        {lang === 'zh' ? '可演示' : 'Demo'}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <p className="mt-3 text-sm text-slate-300 line-clamp-2">
                   {getAlgoDescription(algo)}
@@ -228,10 +265,13 @@ function App() {
                     {catAlgos.map((algo) => (
                       <span
                         key={algo.id}
-                        onClick={() => setSelectedAlgorithm(algo)}
+                        onClick={() => openAlgorithm(algo)}
                         className="text-xs px-2 py-1 rounded-md bg-slate-700/50 text-slate-300 cursor-pointer hover:bg-slate-700 transition-colors"
                       >
                         {algo.icon} {getAlgoName(algo)}
+                        {hasDemo(algo.id) && (
+                          <span className="ml-1 text-emerald-400">●</span>
+                        )}
                       </span>
                     ))}
                   </div>
@@ -283,7 +323,7 @@ function App() {
           onClick={() => setSelectedAlgorithm(null)}
         >
           <div
-            className="bg-slate-800 border border-slate-700 rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto shadow-2xl animate-[modalIn_0.2s_ease-out]"
+            className="bg-slate-800 border border-slate-700 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-[modalIn_0.2s_ease-out]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
@@ -307,104 +347,56 @@ function App() {
               </button>
             </div>
 
-            {/* Modal Content */}
-            <div className="p-5 space-y-5">
-              {/* Category Badge */}
-              <div>
-                <span
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium"
-                  style={{
-                    backgroundColor: getCategoryInfo(selectedAlgorithm.category).color + '20',
-                    color: getCategoryInfo(selectedAlgorithm.category).color,
-                  }}
+            {/* Tab Switcher */}
+            <div className="flex border-b border-slate-700">
+              <button
+                onClick={() => setActiveTab('detail')}
+                className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                  activeTab === 'detail'
+                    ? 'text-blue-400 border-b-2 border-blue-400 bg-blue-500/5'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                📋 {lang === 'zh' ? '算法详情' : 'Details'}
+              </button>
+              {hasDemo(selectedAlgorithm.id) && (
+                <button
+                  onClick={() => setActiveTab('demo')}
+                  className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                    activeTab === 'demo'
+                      ? 'text-emerald-400 border-b-2 border-emerald-400 bg-emerald-500/5'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
                 >
-                  {getCategoryInfo(selectedAlgorithm.category).icon}{' '}
-                  {getCategoryName(getCategoryInfo(selectedAlgorithm.category))}
-                </span>
-              </div>
-
-              {/* Description */}
-              <div>
-                <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  📝 {t.intro}
-                </h3>
-                <p className="text-slate-200">{getAlgoDescription(selectedAlgorithm)}</p>
-              </div>
-
-              {/* Principle */}
-              <div>
-                <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  🔬 {t.principle}
-                </h3>
-                <p className="text-slate-300 text-sm leading-relaxed">
-                  {getAlgoPrinciple(selectedAlgorithm)}
-                </p>
-              </div>
-
-              {/* Formula */}
-              {selectedAlgorithm.formula && (
-                <div>
-                  <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    📐 {t.formula}
-                  </h3>
-                  <div className="bg-slate-900/70 rounded-lg p-4">
-                    <code className="text-emerald-400 font-mono text-sm">
-                      {selectedAlgorithm.formula}
-                    </code>
-                  </div>
-                </div>
+                  🎬 {lang === 'zh' ? '动态演示' : 'Interactive Demo'}
+                </button>
               )}
+            </div>
 
-              {/* Use Cases */}
-              <div>
-                <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  💼 {t.useCases}
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {getAlgoUseCases(selectedAlgorithm).map((uc, idx) => (
-                    <span
-                      key={idx}
-                      className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-lg text-sm text-blue-300"
-                    >
-                      {uc}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Pros & Cons */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <h3 className="text-sm font-semibold text-emerald-400 mb-2">✅ {t.pros}</h3>
-                  <ul className="space-y-1.5">
-                    {getAlgoPros(selectedAlgorithm).map((pro, idx) => (
-                      <li key={idx} className="text-sm text-slate-300 flex items-start gap-2">
-                        <span className="text-emerald-400 mt-0.5">•</span>
-                        {pro}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-red-400 mb-2">❌ {t.cons}</h3>
-                  <ul className="space-y-1.5">
-                    {getAlgoCons(selectedAlgorithm).map((con, idx) => (
-                      <li key={idx} className="text-sm text-slate-300 flex items-start gap-2">
-                        <span className="text-red-400 mt-0.5">•</span>
-                        {con}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-
-              {/* Complexity */}
-              <div className="bg-slate-900/50 rounded-lg p-4 flex items-center justify-between">
-                <span className="text-sm text-slate-400">⏱️ {t.timeComplexity}</span>
-                <code className="text-amber-400 font-mono text-sm">
-                  {selectedAlgorithm.complexity}
-                </code>
-              </div>
+            {/* Tab Content */}
+            <div className="p-5">
+              {activeTab === 'detail' ? (
+                <DetailTab
+                  algo={selectedAlgorithm}
+                  lang={lang}
+                  getCategoryInfo={getCategoryInfo}
+                  getCategoryName={getCategoryName}
+                  getAlgoDescription={getAlgoDescription}
+                  getAlgoPrinciple={getAlgoPrinciple}
+                  getAlgoUseCases={getAlgoUseCases}
+                  getAlgoPros={getAlgoPros}
+                  getAlgoCons={getAlgoCons}
+                  t={t}
+                  hasDemo={hasDemo(selectedAlgorithm.id)}
+                  onOpenDemo={() => setActiveTab('demo')}
+                />
+              ) : (
+                <DemoTab
+                  algoId={selectedAlgorithm.id}
+                  lang={lang}
+                  demoRegistry={demoRegistry}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -421,6 +413,172 @@ function App() {
       </footer>
     </div>
   );
+}
+
+// ==================== Sub Components ====================
+
+interface DetailTabProps {
+  algo: Algorithm;
+  lang: Lang;
+  getCategoryInfo: (id: string) => Category;
+  getCategoryName: (cat: Category) => string;
+  getAlgoDescription: (algo: Algorithm) => string;
+  getAlgoPrinciple: (algo: Algorithm) => string;
+  getAlgoUseCases: (algo: Algorithm) => string[];
+  getAlgoPros: (algo: Algorithm) => string[];
+  getAlgoCons: (algo: Algorithm) => string[];
+  t: typeof translations.zh;
+  hasDemo: boolean;
+  onOpenDemo: () => void;
+}
+
+function DetailTab({
+  algo,
+  lang,
+  getCategoryInfo,
+  getCategoryName,
+  getAlgoDescription,
+  getAlgoPrinciple,
+  getAlgoUseCases,
+  getAlgoPros,
+  getAlgoCons,
+  t,
+  hasDemo,
+  onOpenDemo,
+}: DetailTabProps) {
+  return (
+    <div className="space-y-5">
+      {/* Category Badge */}
+      <div className="flex items-center justify-between">
+        <span
+          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium"
+          style={{
+            backgroundColor: getCategoryInfo(algo.category).color + '20',
+            color: getCategoryInfo(algo.category).color,
+          }}
+        >
+          {getCategoryInfo(algo.category).icon}{' '}
+          {getCategoryName(getCategoryInfo(algo.category))}
+        </span>
+        {hasDemo && (
+          <button
+            onClick={onOpenDemo}
+            className="text-xs px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors font-medium"
+          >
+            🎬 {lang === 'zh' ? '查看演示' : 'View Demo'}
+          </button>
+        )}
+      </div>
+
+      {/* Description */}
+      <div>
+        <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">
+          📝 {t.intro}
+        </h3>
+        <p className="text-slate-200">{getAlgoDescription(algo)}</p>
+      </div>
+
+      {/* Principle */}
+      <div>
+        <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">
+          🔬 {t.principle}
+        </h3>
+        <p className="text-slate-300 text-sm leading-relaxed">
+          {getAlgoPrinciple(algo)}
+        </p>
+      </div>
+
+      {/* Formula */}
+      {algo.formula && (
+        <div>
+          <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">
+            📐 {t.formula}
+          </h3>
+          <div className="bg-slate-900/70 rounded-lg p-4">
+            <code className="text-emerald-400 font-mono text-sm">
+              {algo.formula}
+            </code>
+          </div>
+        </div>
+      )}
+
+      {/* Use Cases */}
+      <div>
+        <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">
+          💼 {t.useCases}
+        </h3>
+        <div className="flex flex-wrap gap-2">
+          {getAlgoUseCases(algo).map((uc, idx) => (
+            <span
+              key={idx}
+              className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-lg text-sm text-blue-300"
+            >
+              {uc}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Pros & Cons */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <h3 className="text-sm font-semibold text-emerald-400 mb-2">✅ {t.pros}</h3>
+          <ul className="space-y-1.5">
+            {getAlgoPros(algo).map((pro, idx) => (
+              <li key={idx} className="text-sm text-slate-300 flex items-start gap-2">
+                <span className="text-emerald-400 mt-0.5">•</span>
+                {pro}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h3 className="text-sm font-semibold text-red-400 mb-2">❌ {t.cons}</h3>
+          <ul className="space-y-1.5">
+            {getAlgoCons(algo).map((con, idx) => (
+              <li key={idx} className="text-sm text-slate-300 flex items-start gap-2">
+                <span className="text-red-400 mt-0.5">•</span>
+                {con}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      {/* Complexity */}
+      <div className="bg-slate-900/50 rounded-lg p-4 flex items-center justify-between">
+        <span className="text-sm text-slate-400">⏱️ {t.timeComplexity}</span>
+        <code className="text-amber-400 font-mono text-sm">
+          {algo.complexity}
+        </code>
+      </div>
+    </div>
+  );
+}
+
+interface DemoTabProps {
+  algoId: string;
+  lang: Lang;
+  demoRegistry: Record<string, DemoConfig>;
+}
+
+function DemoTab({ algoId, lang, demoRegistry }: DemoTabProps) {
+  const config = demoRegistry[algoId];
+
+  if (!config) {
+    return (
+      <div className="text-center py-8">
+        <span className="text-4xl">🚧</span>
+        <p className="mt-3 text-slate-400">
+          {lang === 'zh'
+            ? '该算法的动态演示正在开发中...'
+            : 'Demo for this algorithm is under development...'}
+        </p>
+      </div>
+    );
+  }
+
+  return <AlgorithmDemoContainer config={config} lang={lang} />;
 }
 
 export default App;
