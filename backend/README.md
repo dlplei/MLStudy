@@ -47,7 +47,7 @@ LOG_FILE=logs/app.log
 # API 配置
 API_HOST=0.0.0.0
 API_PORT=8000
-CORS_ORIGINS=["http://localhost:5173"]
+CORS_ORIGINS=["http://localhost:3000"]
 ```
 
 ## 🏃 运行
