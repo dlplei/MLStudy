@@ -10,11 +10,17 @@ from pydantic import Field
 class Settings(BaseSettings):
     """应用配置"""
     
-    # Ollama 配置
-    OLLAMA_BASE_URL: str = Field(default="http://localhost:11434", description="Ollama API 基础 URL")
-    OLLAMA_MODEL: str = Field(default="deepseek-r1:1.5b", description="默认 LLM 模型")
-    LLM_API_KEY: str = Field(default="", description="LLM API 密钥")
-    OLLAMA_TIMEOUT: int = Field(default=30, description="Ollama 请求超时时间（秒）")
+    # LLM 提供商配置
+    LLM_PROVIDER: str = Field(default="ollama", description="LLM 提供商类型: ollama / openai")
+    LLM_BASE_URL: str = Field(default="http://localhost:11434", description="LLM API 基础 URL")
+    LLM_MODEL: str = Field(default="deepseek-r1:1.5b", description="默认 LLM 模型")
+    LLM_API_KEY: str = Field(default="", description="LLM API Key（云端服务需要）")
+    LLM_TIMEOUT: int = Field(default=30, description="LLM 请求超时时间（秒）")
+    
+    # 兼容旧配置
+    OLLAMA_BASE_URL: str = Field(default="http://localhost:11434", description="Ollama API 基础 URL (已弃用)")
+    OLLAMA_MODEL: str = Field(default="deepseek-r1:1.5b", description="默认 LLM 模型 (已弃用)")
+    OLLAMA_TIMEOUT: int = Field(default=30, description="Ollama 请求超时时间（秒）(已弃用)")
     
     # 缓存配置
     CACHE_TTL: int = Field(default=600, description="缓存 TTL（秒）")
@@ -50,10 +56,11 @@ def print_config():
     print("\n" + "="*60)
     print("📋 应用配置")
     print("="*60)
-    print(f"🔗 Ollama Base URL: {settings.OLLAMA_BASE_URL}")
-    print(f"🤖 Ollama Model: {settings.OLLAMA_MODEL}")
-    print(f"🔑 LLM API Key: {settings.LLM_API_KEY}")
-    print(f"⏱️  Ollama Timeout: {settings.OLLAMA_TIMEOUT}s")
+    print(f"🤖 LLM Provider: {settings.LLM_PROVIDER}")
+    print(f"🔗 LLM Base URL: {settings.LLM_BASE_URL}")
+    print(f"🤖 LLM Model: {settings.LLM_MODEL}")
+    print(f"🔑 LLM API Key: {'*' * 8 if settings.LLM_API_KEY else '未设置'}")
+    print(f"⏱️  LLM Timeout: {settings.LLM_TIMEOUT}s")
     print(f"💾 Cache TTL: {settings.CACHE_TTL}s")
     print(f"💾 Cache Max Size: {settings.CACHE_MAX_SIZE}")
     print(f"📝 Log Level: {settings.LOG_LEVEL}")
