@@ -5,6 +5,7 @@ LLM 服务
 import time
 import random
 import uuid
+import asyncio
 import httpx
 from typing import Any, Dict, Optional
 from app.config import settings

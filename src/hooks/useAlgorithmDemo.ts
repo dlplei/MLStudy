@@ -13,7 +13,7 @@ import { logger } from '../services/Logger';
 export function useAlgorithmDemo(
   algorithmId: string | null,
   autoPlayInterval: number = 2500
-): DemoState & DemoActions & { config: DemoConfig | null } {
+): DemoState & DemoActions & { config: DemoConfig | null; generateExplanation: () => Promise<void> } {
   const [state, setState] = useState<DemoState>({
     currentStep: 0,
     isPlaying: false,
@@ -250,6 +250,80 @@ export function useAlgorithmDemo(
     [config]
   );
 
+  /**
+   * 生成 AI 解说词（Phase 3）
+   */
+  const generateExplanation = useCallback(async () => {
+    if (!config || !state.currentSnapshot) return;
+
+    const currentStep = state.currentStep;
+    const currentSnapshot = state.currentSnapshot;
+
+    setState((prev) => ({ ...prev, isGeneratingExplanation: true }));
+
+    try {
+      const response = await llmService.generateExplanation(
+        {
+          algorithmName: config.title.zh,
+          stepTitle: currentSnapshot.title.zh,
+          technicalDescription: currentSnapshot.description.zh,
+          stepIndex: currentStep,
+          totalSteps: config.totalSteps,
+        },
+        'zh'
+      );
+
+      if (response.status === 'success' && response.text) {
+        // 更新当前快照的解说词
+        const updatedSnapshot = {
+          ...currentSnapshot,
+          plainExplanation: {
+            zh: response.text,
+            en: currentSnapshot.plainExplanation.en,
+          },
+          stepMeta: {
+            ...currentSnapshot.stepMeta,
+            explanationSource: 'llm' as const,
+            llmGenerationTimeMs: response.responseTimeMs,
+            llmModel: 'deepseek-r1:1.5b',
+          },
+        };
+
+        // 更新配置中的快照
+        const updatedSnapshots = [...config.snapshots];
+        updatedSnapshots[currentStep] = updatedSnapshot;
+        const updatedConfig = { ...config, snapshots: updatedSnapshots };
+
+        setConfig(updatedConfig);
+        setState((prev) => ({
+          ...prev,
+          currentSnapshot: updatedSnapshot,
+          isGeneratingExplanation: false,
+        }));
+
+        logger.info('DEMO_HOOK', 'AI explanation generated', {
+          algorithmId,
+          stepIndex: currentStep,
+          responseTimeMs: response.responseTimeMs,
+        });
+      } else {
+        setState((prev) => ({ ...prev, isGeneratingExplanation: false }));
+        logger.warn('DEMO_HOOK', 'AI explanation failed', {
+          algorithmId,
+          stepIndex: currentStep,
+          error: response.error,
+        });
+      }
+    } catch (error) {
+      setState((prev) => ({ ...prev, isGeneratingExplanation: false }));
+      logger.error('DEMO_HOOK', 'AI explanation error', {
+        algorithmId,
+        stepIndex: currentStep,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }, [algorithmId, config, state.currentSnapshot, state.currentStep]);
+
   return {
     ...state,
     config,
@@ -259,5 +333,6 @@ export function useAlgorithmDemo(
     play,
     pause,
     goToStep,
+    generateExplanation,
   };
 }
