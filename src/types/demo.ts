@@ -209,25 +209,35 @@ export interface LinearRegressionVisualizationData {
   iteration: number;
 }
 
-// 决策树（预留）
+// 决策树
 export interface TreeNode {
   id: string;
-  type: 'split' | 'leaf';
+  type: 'root' | 'split' | 'leaf';
   feature?: string;
-  threshold?: number;
+  threshold?: string | number;
   label?: string;
   samples: number;
   left?: string;
   right?: string;
 }
 
+export interface TreeEdge {
+  from: string;
+  to: string;
+  condition: string;
+}
+
 export interface DecisionTreeVisualizationData {
-  splitFeature: string;
-  splitThreshold: number;
-  leftSamples: number;
-  rightSamples: number;
-  depth: number;
-  nodes: TreeNode[];
+  data: Array<{ weight: number; color: string; label: string }>;
+  currentFeature: string | null;
+  currentThreshold: string | number | null;
+  leftData: Array<{ weight: number; color: string; label: string }>;
+  rightData: Array<{ weight: number; color: string; label: string }>;
+  treeStructure: {
+    nodes: TreeNode[];
+    edges: TreeEdge[];
+  };
+  complete?: boolean;
 }
 
 // KNN（预留）
@@ -247,4 +257,22 @@ export interface LogisticRegressionVisualizationData {
   loss: number;
   accuracy: number;
   iteration: number;
+}
+
+// SVM（支持向量机）
+export interface SVMPoint {
+  x: number;
+  y: number;
+  label: number; // -1 或 1
+  isSupportVector?: boolean;
+}
+
+export interface SVMVisualizationData {
+  points: SVMPoint[];
+  supportVectors: SVMPoint[];
+  weights: { w1: number; w2: number; b: number };
+  margin: number;
+  kernel: 'linear' | 'rbf' | 'poly';
+  accuracy: number;
+  complete?: boolean;
 }
