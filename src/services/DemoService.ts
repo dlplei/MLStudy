@@ -9,6 +9,8 @@ import {
 import {
   kmeansDemoConfig,
   linearRegressionDemoConfig,
+  decisionTreeDemoConfig,
+  svmDemoConfig,
 } from '../data/demos';
 
 const MIN_LATENCY_MS = 50;
@@ -19,6 +21,8 @@ const DATA_VERSION = '3.0.0';
 const localDataSource: Record<string, DemoConfig> = {
   'kmeans': kmeansDemoConfig,
   'linear-regression': linearRegressionDemoConfig,
+  'decision-tree': decisionTreeDemoConfig,
+  'svm': svmDemoConfig,
 };
 
 const demoCache = new LRUCache<DemoConfig>(30, 10 * 60 * 1000);

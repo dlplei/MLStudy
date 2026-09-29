@@ -1,4 +1,6 @@
 import { DemoConfig, DemoSnapshot } from '../types/demo';
+import { decisionTreeDemoConfig } from './decisionTreeDemo';
+import { svmDemoConfig } from './svmDemo';
 
 // ==================== 基础数据 ====================
 
@@ -181,3 +183,6 @@ export const linearRegressionDemoConfig: DemoConfig = {
     ),
   ],
 };
+
+// 重新导出决策树和 SVM 演示配置
+export { decisionTreeDemoConfig, svmDemoConfig };

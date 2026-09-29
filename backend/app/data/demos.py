@@ -282,8 +282,346 @@ LINEAR_REGRESSION_DEMO_CONFIG = {
 }
 
 
+# ==================== 决策树演示配置 ====================
+
+DECISION_TREE_BASE_DATA = [
+    {'weight': 150, 'color': 'red', 'label': 'apple'},
+    {'weight': 170, 'color': 'red', 'label': 'apple'},
+    {'weight': 140, 'color': 'green', 'label': 'apple'},
+    {'weight': 160, 'color': 'orange', 'label': 'orange'},
+    {'weight': 180, 'color': 'orange', 'label': 'orange'},
+    {'weight': 155, 'color': 'orange', 'label': 'orange'},
+    {'weight': 165, 'color': 'red', 'label': 'apple'},
+    {'weight': 175, 'color': 'orange', 'label': 'orange'},
+]
+
+
+DECISION_TREE_DEMO_CONFIG = {
+    'algorithmId': 'decision-tree',
+    'title': {
+        'zh': '决策树构建过程演示',
+        'en': 'Decision Tree Building Process Demo',
+    },
+    'totalSteps': 5,
+    'snapshots': [
+        {
+            'stepIndex': 0,
+            'title': {'zh': '初始数据集', 'en': 'Initial Dataset'},
+            'description': {
+                'zh': '我们有8个水果样本，需要根据重量和颜色分类为苹果或橙子。决策树将从这个数据集开始构建。',
+                'en': 'We have 8 fruit samples that need to be classified as apple or orange based on weight and color. The decision tree will start building from this dataset.',
+            },
+            'plainExplanation': {
+                'zh': '想象你有一堆水果，你要通过问问题的方式来区分苹果和橙子。决策树就是这样一个"问问题"的过程。',
+                'en': 'Imagine you have a pile of fruits and you need to distinguish apples from oranges by asking questions. A decision tree is exactly this "question-asking" process.',
+            },
+            'actionLabel': {'zh': '开始构建', 'en': 'Start Building'},
+            'visualizationData': {
+                'data': DECISION_TREE_BASE_DATA,
+                'currentFeature': None,
+                'currentThreshold': None,
+                'leftData': [],
+                'rightData': [],
+                'treeStructure': {
+                    'nodes': [{'id': 'root', 'type': 'root', 'samples': 8}],
+                    'edges': [],
+                },
+            },
+        },
+        {
+            'stepIndex': 1,
+            'title': {'zh': '选择最佳分裂特征', 'en': 'Select Best Split Feature'},
+            'description': {
+                'zh': '算法计算每个特征的信息增益，选择"颜色"作为最佳分裂特征。颜色能更好地区分苹果和橙子。',
+                'en': 'The algorithm calculates information gain for each feature and selects "color" as the best split feature. Color can better distinguish apples from oranges.',
+            },
+            'plainExplanation': {
+                'zh': '我们先问："这个水果是什么颜色？" 因为颜色是最容易区分苹果和橙子的特征。',
+                'en': 'We first ask: "What color is this fruit?" Because color is the easiest feature to distinguish apples from oranges.',
+            },
+            'actionLabel': {'zh': '进行分裂', 'en': 'Perform Split'},
+            'visualizationData': {
+                'data': DECISION_TREE_BASE_DATA,
+                'currentFeature': 'color',
+                'currentThreshold': 'orange',
+                'leftData': [d for d in DECISION_TREE_BASE_DATA if d['color'] != 'orange'],
+                'rightData': [d for d in DECISION_TREE_BASE_DATA if d['color'] == 'orange'],
+                'treeStructure': {
+                    'nodes': [
+                        {'id': 'root', 'type': 'split', 'feature': 'color', 'threshold': 'orange', 'samples': 8},
+                        {'id': 'left', 'type': 'leaf', 'samples': 4, 'label': 'pending'},
+                        {'id': 'right', 'type': 'leaf', 'samples': 4, 'label': 'pending'},
+                    ],
+                    'edges': [
+                        {'from': 'root', 'to': 'left', 'condition': '!= orange'},
+                        {'from': 'root', 'to': 'right', 'condition': '= orange'},
+                    ],
+                },
+            },
+        },
+        {
+            'stepIndex': 2,
+            'title': {'zh': '第一次分裂结果', 'en': 'First Split Result'},
+            'description': {
+                'zh': '根据颜色分裂后，右边节点（橙色）全部是橙子，成为叶节点。左边节点（非橙色）还需要进一步分裂。',
+                'en': 'After splitting by color, the right node (orange) contains only oranges and becomes a leaf node. The left node (non-orange) needs further splitting.',
+            },
+            'plainExplanation': {
+                'zh': '如果是橙色，那就是橙子！这个分支完成了。但红色的可能是苹果也可能是橙子，需要继续问问题。',
+                'en': 'If it\'s orange, it\'s an orange! This branch is done. But red ones could be apples or oranges, we need to ask more questions.',
+            },
+            'actionLabel': {'zh': '继续分裂', 'en': 'Continue Splitting'},
+            'visualizationData': {
+                'data': DECISION_TREE_BASE_DATA,
+                'currentFeature': 'color',
+                'currentThreshold': 'orange',
+                'leftData': [d for d in DECISION_TREE_BASE_DATA if d['color'] != 'orange'],
+                'rightData': [d for d in DECISION_TREE_BASE_DATA if d['color'] == 'orange'],
+                'treeStructure': {
+                    'nodes': [
+                        {'id': 'root', 'type': 'split', 'feature': 'color', 'threshold': 'orange', 'samples': 8},
+                        {'id': 'left', 'type': 'split', 'feature': 'weight', 'threshold': 160, 'samples': 4},
+                        {'id': 'right', 'type': 'leaf', 'samples': 4, 'label': 'orange'},
+                        {'id': 'left_left', 'type': 'leaf', 'samples': 2, 'label': 'pending'},
+                        {'id': 'left_right', 'type': 'leaf', 'samples': 2, 'label': 'pending'},
+                    ],
+                    'edges': [
+                        {'from': 'root', 'to': 'left', 'condition': '!= orange'},
+                        {'from': 'root', 'to': 'right', 'condition': '= orange'},
+                        {'from': 'left', 'to': 'left_left', 'condition': '< 160g'},
+                        {'from': 'left', 'to': 'left_right', 'condition': '>= 160g'},
+                    ],
+                },
+            },
+        },
+        {
+            'stepIndex': 3,
+            'title': {'zh': '第二次分裂', 'en': 'Second Split'},
+            'description': {
+                'zh': '对左边的非橙色样本，选择"重量"作为分裂特征，以160g为阈值进行分裂。',
+                'en': 'For the left non-orange samples, select "weight" as the split feature and split with 160g as the threshold.',
+            },
+            'plainExplanation': {
+                'zh': '对于不是橙色的水果，我们再问："它有多重？" 如果小于160克，可能是某种水果；如果大于等于160克，可能是另一种。',
+                'en': 'For fruits that are not orange, we ask again: "How heavy is it?" If less than 160g, it might be one type; if >= 160g, it might be another.',
+            },
+            'actionLabel': {'zh': '完成构建', 'en': 'Complete Building'},
+            'visualizationData': {
+                'data': DECISION_TREE_BASE_DATA,
+                'currentFeature': 'weight',
+                'currentThreshold': 160,
+                'leftData': [d for d in DECISION_TREE_BASE_DATA if d['color'] != 'orange' and d['weight'] < 160],
+                'rightData': [d for d in DECISION_TREE_BASE_DATA if d['color'] != 'orange' and d['weight'] >= 160],
+                'treeStructure': {
+                    'nodes': [
+                        {'id': 'root', 'type': 'split', 'feature': 'color', 'threshold': 'orange', 'samples': 8},
+                        {'id': 'left', 'type': 'split', 'feature': 'weight', 'threshold': 160, 'samples': 4},
+                        {'id': 'right', 'type': 'leaf', 'samples': 4, 'label': 'orange'},
+                        {'id': 'left_left', 'type': 'leaf', 'samples': 2, 'label': 'apple'},
+                        {'id': 'left_right', 'type': 'leaf', 'samples': 2, 'label': 'apple'},
+                    ],
+                    'edges': [
+                        {'from': 'root', 'to': 'left', 'condition': '!= orange'},
+                        {'from': 'root', 'to': 'right', 'condition': '= orange'},
+                        {'from': 'left', 'to': 'left_left', 'condition': '< 160g'},
+                        {'from': 'left', 'to': 'left_right', 'condition': '>= 160g'},
+                    ],
+                },
+            },
+        },
+        {
+            'stepIndex': 4,
+            'title': {'zh': '决策树构建完成', 'en': 'Decision Tree Complete'},
+            'description': {
+                'zh': '所有叶节点都是纯净的（只包含一种类别）。决策树构建完成，可以用来预测新样本的类别。',
+                'en': 'All leaf nodes are pure (contain only one class). The decision tree is complete and can be used to predict the class of new samples.',
+            },
+            'plainExplanation': {
+                'zh': '完成了！现在你可以通过问两个问题来判断任何水果：1. 什么颜色？2. 如果不确定，有多重？这就是决策树的魅力！',
+                'en': 'Done! Now you can classify any fruit by asking two questions: 1. What color? 2. If unsure, how heavy? This is the magic of decision trees!',
+            },
+            'actionLabel': {'zh': '演示完成', 'en': 'Demo Complete'},
+            'visualizationData': {
+                'data': DECISION_TREE_BASE_DATA,
+                'currentFeature': None,
+                'currentThreshold': None,
+                'leftData': [],
+                'rightData': [],
+                'treeStructure': {
+                    'nodes': [
+                        {'id': 'root', 'type': 'split', 'feature': 'color', 'threshold': 'orange', 'samples': 8},
+                        {'id': 'left', 'type': 'split', 'feature': 'weight', 'threshold': 160, 'samples': 4},
+                        {'id': 'right', 'type': 'leaf', 'samples': 4, 'label': 'orange'},
+                        {'id': 'left_left', 'type': 'leaf', 'samples': 2, 'label': 'apple'},
+                        {'id': 'left_right', 'type': 'leaf', 'samples': 2, 'label': 'apple'},
+                    ],
+                    'edges': [
+                        {'from': 'root', 'to': 'left', 'condition': '!= orange'},
+                        {'from': 'root', 'to': 'right', 'condition': '= orange'},
+                        {'from': 'left', 'to': 'left_left', 'condition': '< 160g'},
+                        {'from': 'left', 'to': 'left_right', 'condition': '>= 160g'},
+                    ],
+                },
+                'complete': True,
+            },
+        },
+    ],
+}
+
+
+# ==================== SVM 演示配置 ====================
+
+SVM_BASE_POINTS = [
+    # 类别 0（蓝色）
+    {'x': 1, 'y': 2, 'label': 0},
+    {'x': 2, 'y': 1, 'label': 0},
+    {'x': 1.5, 'y': 1.5, 'label': 0},
+    {'x': 2.5, 'y': 2, 'label': 0},
+    {'x': 1, 'y': 3, 'label': 0},
+    # 类别 1（红色）
+    {'x': 6, 'y': 6, 'label': 1},
+    {'x': 7, 'y': 7, 'label': 1},
+    {'x': 6.5, 'y': 6.5, 'label': 1},
+    {'x': 7.5, 'y': 6, 'label': 1},
+    {'x': 6, 'y': 7, 'label': 1},
+]
+
+
+SVM_DEMO_CONFIG = {
+    'algorithmId': 'svm',
+    'title': {
+        'zh': '支持向量机分类演示',
+        'en': 'Support Vector Machine Classification Demo',
+    },
+    'totalSteps': 5,
+    'snapshots': [
+        {
+            'stepIndex': 0,
+            'title': {'zh': '初始数据分布', 'en': 'Initial Data Distribution'},
+            'description': {
+                'zh': '我们有10个二维数据点，分为两类（蓝色和红色）。目标是找到一个最优的决策边界将它们分开。',
+                'en': 'We have 10 2D data points divided into two classes (blue and red). The goal is to find an optimal decision boundary to separate them.',
+            },
+            'plainExplanation': {
+                'zh': '想象地上有两堆不同颜色的球，你要放一根棍子把它们分开。SVM 就是找那根"最佳"的棍子。',
+                'en': 'Imagine two piles of different colored balls on the ground, and you need to place a stick to separate them. SVM finds that "best" stick.',
+            },
+            'actionLabel': {'zh': '开始训练', 'en': 'Start Training'},
+            'visualizationData': {
+                'points': SVM_BASE_POINTS,
+                'supportVectors': [],
+                'weights': {'w1': 0, 'w2': 0, 'b': 0},
+                'margin': 0,
+                'kernel': 'linear',
+                'accuracy': 0,
+            },
+        },
+        {
+            'stepIndex': 1,
+            'title': {'zh': '初始化超平面', 'en': 'Initialize Hyperplane'},
+            'description': {
+                'zh': 'SVM 开始寻找最优超平面（决策边界）。初始超平面是随机选择的，还不能正确分类所有点。',
+                'en': 'SVM starts searching for the optimal hyperplane (decision boundary). The initial hyperplane is randomly selected and cannot correctly classify all points yet.',
+            },
+            'plainExplanation': {
+                'zh': '我们先随便放一根棍子，看看效果如何。这根棍子就是"超平面"，它把空间分成两半。',
+                'en': 'We first place a stick randomly to see how it works. This stick is the "hyperplane" that divides the space in half.',
+            },
+            'actionLabel': {'zh': '优化边界', 'en': 'Optimize Boundary'},
+            'visualizationData': {
+                'points': SVM_BASE_POINTS,
+                'supportVectors': [],
+                'weights': {'w1': 1, 'w2': -1, 'b': 0},
+                'margin': 0,
+                'kernel': 'linear',
+                'accuracy': 0.6,
+            },
+        },
+        {
+            'stepIndex': 2,
+            'title': {'zh': '最大化间隔', 'en': 'Maximize Margin'},
+            'description': {
+                'zh': 'SVM 的核心思想：不仅要正确分类，还要让决策边界离最近的点尽可能远。这个距离就是"间隔"。',
+                'en': 'The core idea of SVM: not only classify correctly, but also make the decision boundary as far as possible from the nearest points. This distance is the "margin".',
+            },
+            'plainExplanation': {
+                'zh': '我们不仅要分开两堆球，还要让棍子离两边的球都尽可能远。这样分类才更稳定、更可靠。',
+                'en': 'We not only need to separate the two piles of balls, but also keep the stick as far as possible from the balls on both sides. This makes classification more stable and reliable.',
+            },
+            'actionLabel': {'zh': '寻找支持向量', 'en': 'Find Support Vectors'},
+            'visualizationData': {
+                'points': SVM_BASE_POINTS,
+                'supportVectors': [
+                    {'x': 2.5, 'y': 2, 'label': 0, 'isSupportVector': True},
+                    {'x': 6, 'y': 6, 'label': 1, 'isSupportVector': True},
+                ],
+                'weights': {'w1': 1, 'w2': 1, 'b': -4},
+                'margin': 2.5,
+                'kernel': 'linear',
+                'accuracy': 0.8,
+            },
+        },
+        {
+            'stepIndex': 3,
+            'title': {'zh': '识别支持向量', 'en': 'Identify Support Vectors'},
+            'description': {
+                'zh': '支持向量是离决策边界最近的点，它们决定了边界的位置。只有这些点对模型有影响。',
+                'en': 'Support vectors are the points closest to the decision boundary, and they determine the position of the boundary. Only these points affect the model.',
+            },
+            'plainExplanation': {
+                'zh': '注意那些离棍子最近的球（用大圆圈标记），它们就是"支持向量"。它们"支持"着棍子的位置，其他球不影响棍子怎么放。',
+                'en': 'Notice the balls closest to the stick (marked with large circles), they are the "support vectors". They "support" the position of the stick, while other balls don\'t affect how the stick is placed.',
+            },
+            'actionLabel': {'zh': '完成训练', 'en': 'Complete Training'},
+            'visualizationData': {
+                'points': SVM_BASE_POINTS,
+                'supportVectors': [
+                    {'x': 2.5, 'y': 2, 'label': 0, 'isSupportVector': True},
+                    {'x': 1.5, 'y': 1.5, 'label': 0, 'isSupportVector': True},
+                    {'x': 6, 'y': 6, 'label': 1, 'isSupportVector': True},
+                    {'x': 6.5, 'y': 6.5, 'label': 1, 'isSupportVector': True},
+                ],
+                'weights': {'w1': 1, 'w2': 1, 'b': -4},
+                'margin': 3.5,
+                'kernel': 'linear',
+                'accuracy': 1.0,
+            },
+        },
+        {
+            'stepIndex': 4,
+            'title': {'zh': '最优分类器完成', 'en': 'Optimal Classifier Complete'},
+            'description': {
+                'zh': 'SVM 找到了最优超平面，最大化了间隔。所有点都被正确分类，模型训练完成。',
+                'en': 'SVM has found the optimal hyperplane, maximizing the margin. All points are correctly classified, and the model training is complete.',
+            },
+            'plainExplanation': {
+                'zh': '完成了！这根棍子不仅分开了两堆球，而且离两边的球都最远。这就是 SVM 找到的"最佳"分类方式！',
+                'en': 'Done! This stick not only separates the two piles of balls, but is also farthest from the balls on both sides. This is the "best" classification method found by SVM!',
+            },
+            'actionLabel': {'zh': '演示完成', 'en': 'Demo Complete'},
+            'visualizationData': {
+                'points': SVM_BASE_POINTS,
+                'supportVectors': [
+                    {'x': 2.5, 'y': 2, 'label': 0, 'isSupportVector': True},
+                    {'x': 1.5, 'y': 1.5, 'label': 0, 'isSupportVector': True},
+                    {'x': 6, 'y': 6, 'label': 1, 'isSupportVector': True},
+                    {'x': 6.5, 'y': 6.5, 'label': 1, 'isSupportVector': True},
+                ],
+                'weights': {'w1': 1, 'w2': 1, 'b': -4},
+                'margin': 3.5,
+                'kernel': 'linear',
+                'accuracy': 1.0,
+                'complete': True,
+            },
+        },
+    ],
+}
+
+
 # 本地数据源注册表
 LOCAL_DATA_SOURCE = {
     'kmeans': KMEANS_DEMO_CONFIG,
-    'linear-regression': LINEAR_REGRESSION_DEMO_CONFIG
+    'linear-regression': LINEAR_REGRESSION_DEMO_CONFIG,
+    'decision-tree': DECISION_TREE_DEMO_CONFIG,
+    'svm': SVM_DEMO_CONFIG,
 }

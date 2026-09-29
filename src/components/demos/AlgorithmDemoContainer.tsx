@@ -2,8 +2,15 @@ import { useAlgorithmDemo } from '../../hooks/useAlgorithmDemo';
 import { DemoControls } from '../DemoControls';
 import { KMeansVisualizer } from './KMeansVisualizer';
 import { LinearRegressionVisualizer } from './LinearRegressionVisualizer';
+import { DecisionTreeVisualizer } from './DecisionTreeVisualizer';
+import { SVMVisualizer } from './SVMVisualizer';
 import { Lang } from '../../i18n/translations';
-import { KMeansVisualizationData, LinearRegressionVisualizationData } from '../../types/demo';
+import { 
+  KMeansVisualizationData, 
+  LinearRegressionVisualizationData,
+  DecisionTreeVisualizationData,
+  SVMVisualizationData 
+} from '../../types/demo';
 import { demoService } from '../../services/DemoService';
 
 interface AlgorithmDemoContainerProps {
@@ -176,6 +183,10 @@ function DemoVisualizer({
         return <KMeansVisualizer visualizationData={visualizationData as unknown as KMeansVisualizationData} lang={lang} />;
       case 'linear-regression':
         return <LinearRegressionVisualizer visualizationData={visualizationData as unknown as LinearRegressionVisualizationData} lang={lang} />;
+      case 'decision-tree':
+        return <DecisionTreeVisualizer visualizationData={visualizationData as unknown as DecisionTreeVisualizationData} lang={lang} />;
+      case 'svm':
+        return <SVMVisualizer visualizationData={visualizationData as unknown as SVMVisualizationData} lang={lang} />;
       default:
         return (
           <div className="bg-slate-900/40 rounded-xl p-6 border border-slate-700/30 text-center">
@@ -187,8 +198,8 @@ function DemoVisualizer({
             </p>
             <p className="text-slate-500 text-xs mt-2">
               {lang === 'zh'
-                ? '即将支持：决策树、KNN、逻辑回归等'
-                : 'Coming soon: Decision Tree, KNN, Logistic Regression, etc.'}
+                ? '即将支持：KNN、逻辑回归等'
+                : 'Coming soon: KNN, Logistic Regression, etc.'}
             </p>
           </div>
         );
