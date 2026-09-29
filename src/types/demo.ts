@@ -144,6 +144,8 @@ export interface DemoState {
   error: string | null;
   /** 是否处于降级模式 */
   isDegraded: boolean;
+  /** 是否正在生成 AI 解说词 */
+  isGeneratingExplanation?: boolean;
 }
 
 export interface DemoActions {
