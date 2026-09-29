@@ -117,9 +117,11 @@ export function AlgorithmDemoContainer({ algorithmId, lang }: AlgorithmDemoConta
         </div>
         {/* 通俗解说词 */}
         <div className="bg-slate-800/50 rounded-lg p-3 mb-2">
-          <p className="text-slate-200 text-sm leading-relaxed">
-            💡 {lang === 'zh' ? currentSnapshot.plainExplanation.zh : currentSnapshot.plainExplanation.en}
-          </p>
+          <div className="max-h-32 overflow-y-auto custom-scrollbar">
+            <p className="text-slate-200 text-sm leading-relaxed">
+              💡 {lang === 'zh' ? currentSnapshot.plainExplanation.zh : currentSnapshot.plainExplanation.en}
+            </p>
+          </div>
           {/* 显示解说词来源 */}
           {currentSnapshot.stepMeta?.explanationSource && (
             <div className="mt-2 flex items-center gap-2 text-xs">
