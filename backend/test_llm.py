@@ -111,7 +111,7 @@ def test_openai_api(base_url: str, model: str, api_key: str):
     try:
         # 尝试访问 models 端点（如果存在）
         response = httpx.get(
-            f"{base_url}/v1/models",
+            f"{base_url}/models",
             headers={'Authorization': f'Bearer {api_key}'},
             timeout=5
         )
@@ -121,8 +121,9 @@ def test_openai_api(base_url: str, model: str, api_key: str):
             try:
                 models = response.json().get('data', [])
                 print(f"   可用模型数量: {len(models)}")
-                for m in models[:5]:
+                for m in models[:]:
                     print(f"   - {m.get('id')}")
+                    #print(f"   - {m}")
             except:
                 print("   (无法解析模型列表)")
         elif response.status_code == 404:
@@ -138,7 +139,7 @@ def test_openai_api(base_url: str, model: str, api_key: str):
     print(f"\n🧪 测试生成（模型: {model}）...")
     try:
         response = httpx.post(
-            f"{base_url}/v1/chat/completions",
+            f"{base_url}/chat/completions",
             headers={
                 'Authorization': f'Bearer {api_key}',
                 'Content-Type': 'application/json'

@@ -309,7 +309,7 @@ class LLMService:
             
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 response = await client.post(
-                    f"{self.base_url}/v1/chat/completions",
+                    f"{self.base_url}/chat/completions",
                     headers=headers,
                     json={
                         'model': model,
