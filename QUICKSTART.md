@@ -110,9 +110,9 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 ```bash
 # 设置环境变量，启用真实 API
-export VITE_USE_REAL_API=true  # macOS/Linux
-# Windows PowerShell: $env:VITE_USE_REAL_API="true"
-# Windows CMD: set VITE_USE_REAL_API=true
+#export VITE_USE_REAL_API=true  # macOS/Linux
+Windows PowerShell: $env:VITE_USE_REAL_API="true"
+Windows CMD: set VITE_USE_REAL_API=true
 
 # 启动前端
 npm run dev

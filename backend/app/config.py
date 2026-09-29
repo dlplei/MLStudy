@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     # Ollama 配置
     OLLAMA_BASE_URL: str = Field(default="http://localhost:11434", description="Ollama API 基础 URL")
     OLLAMA_MODEL: str = Field(default="deepseek-r1:1.5b", description="默认 LLM 模型")
+    LLM_API_KEY: str = Field(default="", description="LLM API 密钥")
     OLLAMA_TIMEOUT: int = Field(default=30, description="Ollama 请求超时时间（秒）")
     
     # 缓存配置
@@ -51,6 +52,7 @@ def print_config():
     print("="*60)
     print(f"🔗 Ollama Base URL: {settings.OLLAMA_BASE_URL}")
     print(f"🤖 Ollama Model: {settings.OLLAMA_MODEL}")
+    print(f"🔑 LLM API Key: {settings.LLM_API_KEY}")
     print(f"⏱️  Ollama Timeout: {settings.OLLAMA_TIMEOUT}s")
     print(f"💾 Cache TTL: {settings.CACHE_TTL}s")
     print(f"💾 Cache Max Size: {settings.CACHE_MAX_SIZE}")
