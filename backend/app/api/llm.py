@@ -3,21 +3,26 @@ LLM API 路由
 """
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from app.services.llm_service import llm_service
+from app.utils.logger import logger
 
 router = APIRouter()
 
 
 class ExplanationRequest(BaseModel):
     """生成解说词请求"""
-    algorithmName: str
-    stepTitle: str
-    technicalDescription: str
-    stepIndex: int
-    totalSteps: int
-    language: str = "zh"
-    model: Optional[str] = None
+    algorithmName: str = Field(..., description="算法名称", examples=["K-Means 聚类"])
+    stepTitle: str = Field(..., description="步骤标题", examples=["随机初始化聚类中心"])
+    technicalDescription: str = Field(..., description="技术描述", examples=["随机选择3个数据点作为初始聚类中心"])
+    stepIndex: int = Field(..., description="步骤索引（从0开始）", examples=[1])
+    totalSteps: int = Field(..., description="总步骤数", examples=[5])
+    language: str = Field(default="zh", description="语言（zh/en）", examples=["zh"])
+    model: Optional[str] = Field(
+        default=None, 
+        description="模型名称（可选，不填则使用配置文件中的默认模型）",
+        examples=["claude-haiku-4-5", "deepseek-chat", "qwen-turbo"]
+    )
 
 
 class BatchExplanationRequest(BaseModel):
@@ -35,6 +40,7 @@ async def generate_explanation(request: ExplanationRequest):
     
     Args:
         request: 请求参数
+        - model: 模型名称（可选，不填则使用配置文件中的默认模型）
     
     Returns:
         LLM 生成的解说词
@@ -47,10 +53,17 @@ async def generate_explanation(request: ExplanationRequest):
         'total_steps': request.totalSteps
     }
     
+    # 如果 model 为空或为默认占位符 "string"，使用配置文件中的默认模型
+    model = request.model
+    if not model or model == "string":
+        from app.config import settings
+        model = settings.LLM_MODEL or settings.OLLAMA_MODEL
+        logger.info('LLM_API', f'使用默认模型: {model}')
+    
     result = await llm_service.generate_explanation(
         context=context,
         language=request.language,
-        model=request.model
+        model=model
     )
     
     if result['status'] == 'error':
@@ -66,6 +79,7 @@ async def batch_generate_explanations(request: BatchExplanationRequest):
     
     Args:
         request: 批量请求参数
+        - model: 模型名称（可选，不填则使用配置文件中的默认模型）
     
     Returns:
         LLM 生成的解说词列表
@@ -81,10 +95,17 @@ async def batch_generate_explanations(request: BatchExplanationRequest):
         for ctx in request.contexts
     ]
     
+    # 如果 model 为空或为默认占位符 "string"，使用配置文件中的默认模型
+    model = request.model
+    if not model or model == "string":
+        from app.config import settings
+        model = settings.LLM_MODEL or settings.OLLAMA_MODEL
+        logger.info('LLM_API', f'批量生成使用默认模型: {model}')
+    
     results = await llm_service.batch_generate_explanations(
         contexts=contexts,
         language=request.language,
-        model=request.model,
+        model=model,
         concurrency=request.concurrency
     )
     
