@@ -117,8 +117,8 @@ export function AlgorithmDemoContainer({ algorithmId, lang }: AlgorithmDemoConta
         </div>
         {/* 通俗解说词 */}
         <div className="bg-slate-800/50 rounded-lg p-3 mb-2">
-          <div className="max-h-32 overflow-y-auto custom-scrollbar">
-            <p className="text-slate-200 text-sm leading-relaxed">
+          <div className="max-h-64 overflow-y-auto custom-scrollbar min-h-[80px]">
+            <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-wrap">
               💡 {lang === 'zh' ? currentSnapshot.plainExplanation.zh : currentSnapshot.plainExplanation.en}
             </p>
           </div>
