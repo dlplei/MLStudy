@@ -14,12 +14,17 @@ from app.utils.logger import logger
 
 
 class LLMService:
-    """LLM 服务类"""
+    """LLM 服务类 - 支持多种提供商"""
     
     def __init__(self):
-        self.base_url = settings.OLLAMA_BASE_URL
-        self.default_model = settings.OLLAMA_MODEL
-        self.timeout = settings.OLLAMA_TIMEOUT
+        # 优先使用新配置，兼容旧配置
+        self.provider = getattr(settings, 'LLM_PROVIDER', 'ollama')
+        self.base_url = getattr(settings, 'LLM_BASE_URL', None) or settings.OLLAMA_BASE_URL
+        self.default_model = getattr(settings, 'LLM_MODEL', None) or settings.OLLAMA_MODEL
+        self.api_key = getattr(settings, 'LLM_API_KEY', '')
+        self.timeout = getattr(settings, 'LLM_TIMEOUT', None) or settings.OLLAMA_TIMEOUT
+        
+        logger.info('LLM_SERVICE', f'初始化 LLM 服务: provider={self.provider}, model={self.default_model}')
     
     @staticmethod
     def _generate_request_id() -> str:
@@ -121,8 +126,8 @@ class LLMService:
                         'request_id': request_id
                     }
             
-            # 调用 Ollama API
-            response = await self._call_ollama_api(prompt, model, request_id)
+            # 调用 LLM API（根据 provider 自动选择）
+            response = await self._call_llm_api(prompt, model, request_id)
             response_time = int((time.time() - start_time) * 1000)
             
             if response['status'] == 'success' and response.get('text'):
@@ -215,6 +220,13 @@ class LLMService:
         
         return results
     
+    async def _call_llm_api(self, prompt: str, model: str, request_id: str) -> Dict[str, Any]:
+        """调用 LLM API - 根据 provider 选择不同的调用方式"""
+        if self.provider == 'openai':
+            return await self._call_openai_api(prompt, model, request_id)
+        else:
+            return await self._call_ollama_api(prompt, model, request_id)
+    
     async def _call_ollama_api(self, prompt: str, model: str, request_id: str) -> Dict[str, Any]:
         """调用 Ollama API"""
         # 模拟延迟（开发环境）
@@ -256,6 +268,84 @@ class LLMService:
                     'status': 'success',
                     'text': result.get('response', ''),
                     'tokens_used': result.get('eval_count', 0),
+                    'request_id': request_id
+                }
+        
+        except httpx.TimeoutException:
+            return {
+                'status': 'timeout',
+                'error': f'Request timeout after {self.timeout}s',
+                'request_id': request_id
+            }
+        except Exception as e:
+            return {
+                'status': 'error',
+                'error': str(e),
+                'request_id': request_id
+            }
+    
+    async def _call_openai_api(self, prompt: str, model: str, request_id: str) -> Dict[str, Any]:
+        """调用 OpenAI 兼容 API（支持云端 LLM 服务）"""
+        # 模拟延迟（开发环境）
+        latency = random.randint(settings.LLM_LATENCY_MIN, settings.LLM_LATENCY_MAX)
+        await asyncio.sleep(latency / 1000)
+        
+        # 模拟失败
+        if random.random() < settings.SIMULATE_FAILURE_RATE:
+            return {
+                'status': 'error',
+                'error': 'Simulated API error',
+                'request_id': request_id
+            }
+        
+        try:
+            headers = {
+                'Content-Type': 'application/json'
+            }
+            
+            # 如果有 API key，添加到请求头
+            if self.api_key:
+                headers['Authorization'] = f'Bearer {self.api_key}'
+            
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.post(
+                    f"{self.base_url}/v1/chat/completions",
+                    headers=headers,
+                    json={
+                        'model': model,
+                        'messages': [
+                            {
+                                'role': 'user',
+                                'content': prompt
+                            }
+                        ],
+                        'temperature': 0.7,
+                        'max_tokens': 200,
+                        'stream': False
+                    }
+                )
+                
+                if response.status_code != 200:
+                    error_text = response.text
+                    logger.error('LLM_SERVICE', f'OpenAI API error: {response.status_code}', {
+                        'error': error_text,
+                        'request_id': request_id
+                    }, request_id)
+                    return {
+                        'status': 'error',
+                        'error': f"API error: {response.status_code} - {error_text}",
+                        'request_id': request_id
+                    }
+                
+                result = response.json()
+                # OpenAI 格式的响应
+                text = result.get('choices', [{}])[0].get('message', {}).get('content', '')
+                tokens_used = result.get('usage', {}).get('total_tokens', 0)
+                
+                return {
+                    'status': 'success',
+                    'text': text,
+                    'tokens_used': tokens_used,
                     'request_id': request_id
                 }
         
