@@ -121,8 +121,13 @@ export function InteractiveDemo({ algorithmId, lang }: InteractiveDemoProps) {
         const testData = data.slice(Math.floor(data.length * 0.7));
         return runRandomForest(trainData, testData, params as any);
       }
-      case 'mlp':
-        return runMLP(data, params as any);
+      case 'mlp': {
+        const mlpParams = {
+          ...params,
+          hiddenLayers: (params.hiddenLayers as string).split(',').map(Number)
+        };
+        return runMLP(data, mlpParams as any);
+      }
       default:
         return null;
     }
