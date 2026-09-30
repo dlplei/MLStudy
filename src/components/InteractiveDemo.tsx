@@ -59,7 +59,9 @@ export function InteractiveDemo({ algorithmId, lang }: InteractiveDemoProps) {
   };
 
   const [params, setParams] = useState<Record<string, any>>(getDefaultParams());
-  const [data] = useState<any>(() => {
+  
+  // 使用 useMemo 根据 algorithmId 生成数据，确保算法切换时数据正确更新
+  const data = useMemo<any>(() => {
     // 生成固定数据集（使用种子确保一致性）
     switch (algorithmId) {
       case 'kmeans':
@@ -92,7 +94,7 @@ export function InteractiveDemo({ algorithmId, lang }: InteractiveDemoProps) {
       default:
         return [];
     }
-  });
+  }, [algorithmId]);
 
   // 运行算法
   const result = useMemo(() => {

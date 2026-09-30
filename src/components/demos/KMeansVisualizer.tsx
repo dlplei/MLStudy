@@ -41,8 +41,8 @@ export function KMeansVisualizer({ visualizationData, lang }: KMeansVisualizerPr
       <div className="flex items-center justify-between">
         <div className="flex gap-3 flex-wrap">
           {centers.length > 0 &&
-            centers.map((c: { id: number }, idx: number) => (
-              <span key={c.id} className="flex items-center gap-1.5 text-xs">
+            centers.map((c: { x: number; y: number }, idx: number) => (
+              <span key={`center-${idx}`} className="flex items-center gap-1.5 text-xs">
                 <span
                   className="w-3 h-3 rounded-full"
                   style={{ backgroundColor: CLUSTER_COLORS[idx] }}
