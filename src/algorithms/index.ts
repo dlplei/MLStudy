@@ -709,7 +709,11 @@ export function runKNN(
       votes[neighbor.label] = (votes[neighbor.label] || 0) + 1;
     }
 
-    const prediction = parseInt(Object.entries(votes).sort((a, b) => b[1] - a[1])[0][0]);
+    // 安全检查：确保 votes 不为空
+    let prediction = 0;
+    if (Object.keys(votes).length > 0) {
+      prediction = parseInt(Object.entries(votes).sort((a, b) => b[1] - a[1])[0][0]);
+    }
     predictions.push(prediction);
 
     if (prediction === testPoint.label) {
@@ -984,23 +988,38 @@ export function runRandomForest(
 
     for (const tree of trees) {
       let node = tree;
-      while (node.label === undefined) {
-        if (testPoint.features[node.feature] < node.threshold) {
-          node = node.left;
+      // 安全检查：确保节点存在且有 label 或有效的子节点
+      while (node && node.label === undefined && (node.left || node.right)) {
+        if (node.feature !== undefined && node.threshold !== undefined) {
+          if (testPoint.features[node.feature] < node.threshold) {
+            node = node.left;
+          } else {
+            node = node.right;
+          }
         } else {
-          node = node.right;
+          break; // 节点结构不完整，跳出循环
         }
       }
-      votes[node.label] = (votes[node.label] || 0) + 1;
+      
+      // 只有当节点有 label 时才投票
+      if (node && node.label !== undefined) {
+        votes[node.label] = (votes[node.label] || 0) + 1;
+      }
     }
 
-    const prediction = parseInt(
-      Object.entries(votes).sort((a, b) => b[1] - a[1])[0][0]
-    );
-    predictions.push(prediction);
+    // 安全检查：确保 votes 不为空
+    if (Object.keys(votes).length > 0) {
+      const prediction = parseInt(
+        Object.entries(votes).sort((a, b) => b[1] - a[1])[0][0]
+      );
+      predictions.push(prediction);
 
-    if (prediction === testPoint.label) {
-      correct++;
+      if (prediction === testPoint.label) {
+        correct++;
+      }
+    } else {
+      // 如果没有投票，使用默认预测（0）
+      predictions.push(0);
     }
   }
 
