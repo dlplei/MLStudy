@@ -135,6 +135,121 @@ export function ParameterControl({
             type: 'number' as const,
           },
         ];
+      case 'logistic-regression':
+        return [
+          {
+            key: 'learningRate',
+            label: lang === 'zh' ? '学习率' : 'Learning Rate',
+            min: 0.001,
+            max: 0.1,
+            step: 0.001,
+            type: 'number' as const,
+          },
+          {
+            key: 'iterations',
+            label: lang === 'zh' ? '迭代次数' : 'Iterations',
+            min: 10,
+            max: 500,
+            step: 10,
+            type: 'number' as const,
+          },
+          {
+            key: 'regularization',
+            label: lang === 'zh' ? '正则化系数' : 'Regularization',
+            min: 0,
+            max: 1,
+            step: 0.01,
+            type: 'number' as const,
+          },
+        ];
+      case 'knn':
+        return [
+          {
+            key: 'k',
+            label: lang === 'zh' ? 'K 值' : 'K Value',
+            min: 1,
+            max: 15,
+            step: 1,
+            type: 'number' as const,
+          },
+          {
+            key: 'distanceMetric',
+            label: lang === 'zh' ? '距离度量' : 'Distance Metric',
+            options: [
+              { value: 'euclidean', label: lang === 'zh' ? '欧氏距离' : 'Euclidean' },
+              { value: 'manhattan', label: lang === 'zh' ? '曼哈顿距离' : 'Manhattan' },
+            ],
+            type: 'select' as const,
+          },
+        ];
+      case 'pca':
+        return [
+          {
+            key: 'nComponents',
+            label: lang === 'zh' ? '主成分数量' : 'Number of Components',
+            min: 1,
+            max: 3,
+            step: 1,
+            type: 'number' as const,
+          },
+        ];
+      case 'random-forest':
+        return [
+          {
+            key: 'nTrees',
+            label: lang === 'zh' ? '树的数量' : 'Number of Trees',
+            min: 5,
+            max: 50,
+            step: 5,
+            type: 'number' as const,
+          },
+          {
+            key: 'maxDepth',
+            label: lang === 'zh' ? '最大深度' : 'Max Depth',
+            min: 2,
+            max: 10,
+            step: 1,
+            type: 'number' as const,
+          },
+          {
+            key: 'minSamplesSplit',
+            label: lang === 'zh' ? '最小分裂样本数' : 'Min Samples Split',
+            min: 2,
+            max: 10,
+            step: 1,
+            type: 'number' as const,
+          },
+        ];
+      case 'mlp':
+        return [
+          {
+            key: 'hiddenLayers',
+            label: lang === 'zh' ? '隐藏层配置' : 'Hidden Layers',
+            options: [
+              { value: '4', label: '[4]' },
+              { value: '4,4', label: '[4, 4]' },
+              { value: '8', label: '[8]' },
+              { value: '8,4', label: '[8, 4]' },
+            ],
+            type: 'select' as const,
+          },
+          {
+            key: 'learningRate',
+            label: lang === 'zh' ? '学习率' : 'Learning Rate',
+            min: 0.001,
+            max: 0.1,
+            step: 0.001,
+            type: 'number' as const,
+          },
+          {
+            key: 'iterations',
+            label: lang === 'zh' ? '迭代次数' : 'Iterations',
+            min: 50,
+            max: 500,
+            step: 50,
+            type: 'number' as const,
+          },
+        ];
       default:
         return [];
     }
