@@ -416,7 +416,8 @@ export function InteractiveDemo({ algorithmId, lang }: InteractiveDemoProps) {
       }
       case 'mlp': {
         const mlpResult = result as any;
-        const hiddenLayers = (params.hiddenLayers as string).split(',').map(Number);
+        const hiddenLayersStr = params.hiddenLayers || '4,4';
+        const hiddenLayers = (hiddenLayersStr as string).split(',').map(Number);
         return (
           <div className="space-y-4">
             <div className="bg-slate-900/50 rounded-lg p-4">
