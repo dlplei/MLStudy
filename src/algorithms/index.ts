@@ -533,3 +533,627 @@ export function generateSVMData(n: number = 20) {
   }
   return points;
 }
+
+// ==================== 逻辑回归实现 ====================
+
+export interface LogisticRegressionParams {
+  learningRate: number;
+  iterations: number;
+  regularization: number;
+}
+
+export interface LogisticRegressionResult {
+  weights: number[];
+  bias: number;
+  lossHistory: number[];
+  finalLoss: number;
+  accuracy: number;
+  predictions: number[];
+}
+
+/**
+ * 逻辑回归 - 梯度下降实现
+ */
+export function runLogisticRegression(
+  points: Array<{ features: number[]; label: number }>,
+  params: LogisticRegressionParams
+): LogisticRegressionResult {
+  const { learningRate, iterations, regularization } = params;
+  const n = points.length;
+  const numFeatures = points[0].features.length;
+
+  let weights = new Array(numFeatures).fill(0);
+  let bias = 0;
+  const lossHistory: number[] = [];
+  const predictions: number[] = [];
+
+  // Sigmoid 函数
+  const sigmoid = (z: number): number => {
+    return 1 / (1 + Math.exp(-Math.max(-500, Math.min(500, z))));
+  };
+
+  for (let iter = 0; iter < iterations; iter++) {
+    let dw = new Array(numFeatures).fill(0);
+    let db = 0;
+    let loss = 0;
+
+    for (let i = 0; i < n; i++) {
+      const x = points[i].features;
+      const y = points[i].label;
+
+      // 计算预测
+      const z = weights.reduce((sum, w, j) => sum + w * x[j], 0) + bias;
+      const prediction = sigmoid(z);
+
+      // 计算损失（交叉熵）
+      const epsilon = 1e-15;
+      loss += -(y * Math.log(prediction + epsilon) + (1 - y) * Math.log(1 - prediction + epsilon));
+
+      // 计算梯度
+      const error = prediction - y;
+      for (let j = 0; j < numFeatures; j++) {
+        dw[j] += error * x[j];
+      }
+      db += error;
+    }
+
+    // 平均损失和梯度
+    loss /= n;
+    for (let j = 0; j < numFeatures; j++) {
+      dw[j] = dw[j] / n + regularization * weights[j];
+    }
+    db /= n;
+
+    lossHistory.push(loss);
+
+    // 更新参数
+    for (let j = 0; j < numFeatures; j++) {
+      weights[j] -= learningRate * dw[j];
+    }
+    bias -= learningRate * db;
+  }
+
+  // 计算最终预测和准确率
+  let correct = 0;
+  for (let i = 0; i < n; i++) {
+    const x = points[i].features;
+    const z = weights.reduce((sum, w, j) => sum + w * x[j], 0) + bias;
+    const prediction = sigmoid(z) >= 0.5 ? 1 : 0;
+    predictions.push(prediction);
+    if (prediction === points[i].label) {
+      correct++;
+    }
+  }
+
+  return {
+    weights,
+    bias,
+    lossHistory,
+    finalLoss: lossHistory[lossHistory.length - 1] || 0,
+    accuracy: correct / n,
+    predictions,
+  };
+}
+
+export function generateLogisticData(n: number = 40) {
+  const points: Array<{ features: number[]; label: number }> = [];
+  for (let i = 0; i < n; i++) {
+    if (i < n / 2) {
+      points.push({
+        features: [1 + Math.random() * 2, 1 + Math.random() * 2],
+        label: 0,
+      });
+    } else {
+      points.push({
+        features: [4 + Math.random() * 2, 4 + Math.random() * 2],
+        label: 1,
+      });
+    }
+  }
+  return points;
+}
+
+// ==================== KNN 实现 ====================
+
+export interface KNNParams {
+  k: number;
+  distanceMetric: 'euclidean' | 'manhattan';
+}
+
+export interface KNNResult {
+  predictions: number[];
+  accuracy: number;
+  distances: number[][];
+}
+
+/**
+ * KNN 算法实现
+ */
+export function runKNN(
+  trainPoints: Array<{ features: number[]; label: number }>,
+  testPoints: Array<{ features: number[]; label: number }>,
+  params: KNNParams
+): KNNResult {
+  const { k, distanceMetric } = params;
+  const predictions: number[] = [];
+  const distances: number[][] = [];
+
+  // 距离计算函数
+  const calculateDistance = (a: number[], b: number[]): number => {
+    if (distanceMetric === 'manhattan') {
+      return a.reduce((sum, val, i) => sum + Math.abs(val - b[i]), 0);
+    } else {
+      return Math.sqrt(a.reduce((sum, val, i) => sum + Math.pow(val - b[i], 2), 0));
+    }
+  };
+
+  let correct = 0;
+
+  for (const testPoint of testPoints) {
+    // 计算到所有训练点的距离
+    const dists = trainPoints.map((trainPoint, idx) => ({
+      distance: calculateDistance(testPoint.features, trainPoint.features),
+      label: trainPoint.label,
+      index: idx,
+    }));
+
+    // 排序并选择 K 个最近邻
+    dists.sort((a, b) => a.distance - b.distance);
+    const kNearest = dists.slice(0, k);
+
+    distances.push(kNearest.map((d) => d.distance));
+
+    // 投票决定类别
+    const votes: Record<number, number> = {};
+    for (const neighbor of kNearest) {
+      votes[neighbor.label] = (votes[neighbor.label] || 0) + 1;
+    }
+
+    const prediction = parseInt(Object.entries(votes).sort((a, b) => b[1] - a[1])[0][0]);
+    predictions.push(prediction);
+
+    if (prediction === testPoint.label) {
+      correct++;
+    }
+  }
+
+  return {
+    predictions,
+    accuracy: correct / testPoints.length,
+    distances,
+  };
+}
+
+// ==================== PCA 实现 ====================
+
+export interface PCAParams {
+  nComponents: number;
+}
+
+export interface PCAResult {
+  components: number[][];
+  explainedVariance: number[];
+  transformedData: number[][];
+  totalVarianceExplained: number;
+}
+
+/**
+ * PCA 算法实现（简化版）
+ */
+export function runPCA(
+  points: Array<{ features: number[] }>,
+  params: PCAParams
+): PCAResult {
+  const { nComponents } = params;
+  const n = points.length;
+  const numFeatures = points[0].features.length;
+
+  // 1. 中心化数据
+  const means = new Array(numFeatures).fill(0);
+  for (const point of points) {
+    for (let i = 0; i < numFeatures; i++) {
+      means[i] += point.features[i];
+    }
+  }
+  for (let i = 0; i < numFeatures; i++) {
+    means[i] /= n;
+  }
+
+  const centeredData = points.map((point) =>
+    point.features.map((val, i) => val - means[i])
+  );
+
+  // 2. 计算协方差矩阵
+  const covarianceMatrix: number[][] = Array(numFeatures)
+    .fill(0)
+    .map(() => Array(numFeatures).fill(0));
+
+  for (let i = 0; i < numFeatures; i++) {
+    for (let j = 0; j < numFeatures; j++) {
+      let sum = 0;
+      for (let k = 0; k < n; k++) {
+        sum += centeredData[k][i] * centeredData[k][j];
+      }
+      covarianceMatrix[i][j] = sum / (n - 1);
+    }
+  }
+
+  // 3. 幂迭代法求特征向量（简化版）
+  const components: number[][] = [];
+  const explainedVariance: number[] = [];
+
+  let currentMatrix = covarianceMatrix.map((row) => [...row]);
+
+  for (let comp = 0; comp < nComponents; comp++) {
+    // 幂迭代
+    let vector = new Array(numFeatures).fill(1 / Math.sqrt(numFeatures));
+
+    for (let iter = 0; iter < 100; iter++) {
+      const newVector = new Array(numFeatures).fill(0);
+      for (let i = 0; i < numFeatures; i++) {
+        for (let j = 0; j < numFeatures; j++) {
+          newVector[i] += currentMatrix[i][j] * vector[j];
+        }
+      }
+
+      // 归一化
+      const norm = Math.sqrt(newVector.reduce((sum, val) => sum + val * val, 0));
+      vector = newVector.map((val) => val / norm);
+    }
+
+    // 计算特征值
+    let eigenvalue = 0;
+    for (let i = 0; i < numFeatures; i++) {
+      for (let j = 0; j < numFeatures; j++) {
+        eigenvalue += vector[i] * currentMatrix[i][j] * vector[j];
+      }
+    }
+
+    components.push(vector);
+    explainedVariance.push(eigenvalue);
+
+    // 从矩阵中移除这个成分
+    for (let i = 0; i < numFeatures; i++) {
+      for (let j = 0; j < numFeatures; j++) {
+        currentMatrix[i][j] -= eigenvalue * vector[i] * vector[j];
+      }
+    }
+  }
+
+  // 4. 投影数据
+  const transformedData = centeredData.map((point) =>
+    components.map((comp) =>
+      point.reduce((sum, val, i) => sum + val * comp[i], 0)
+    )
+  );
+
+  // 5. 计算解释方差比例
+  const totalVariance = explainedVariance.reduce((sum, val) => sum + val, 0);
+  const allVariance = covarianceMatrix.reduce(
+    (sum, row, i) => sum + row[i],
+    0
+  );
+
+  return {
+    components,
+    explainedVariance: explainedVariance.map((v) => v / allVariance),
+    transformedData,
+    totalVarianceExplained: totalVariance / allVariance,
+  };
+}
+
+export function generatePCAData(n: number = 50, numFeatures: number = 3) {
+  const points: Array<{ features: number[] }> = [];
+  for (let i = 0; i < n; i++) {
+    const features = [];
+    for (let j = 0; j < numFeatures; j++) {
+      features.push(Math.random() * 10);
+    }
+    points.push({ features });
+  }
+  return points;
+}
+
+// ==================== 随机森林实现（简化版） ====================
+
+export interface RandomForestParams {
+  nTrees: number;
+  maxDepth: number;
+  minSamplesSplit: number;
+}
+
+export interface RandomForestResult {
+  predictions: number[];
+  accuracy: number;
+  featureImportance: number[];
+}
+
+/**
+ * 随机森林算法实现（简化版）
+ */
+export function runRandomForest(
+  trainPoints: Array<{ features: number[]; label: number }>,
+  testPoints: Array<{ features: number[]; label: number }>,
+  params: RandomForestParams
+): RandomForestResult {
+  const { nTrees, maxDepth, minSamplesSplit } = params;
+  const predictions: number[] = [];
+  const numFeatures = trainPoints[0].features.length;
+  const featureImportance = new Array(numFeatures).fill(0);
+
+  // 构建多棵决策树
+  const trees: Array<{ feature: number; threshold: number; left: any; right: any; label?: number }> = [];
+
+  for (let t = 0; t < nTrees; t++) {
+    // Bootstrap 采样
+    const sample = [];
+    for (let i = 0; i < trainPoints.length; i++) {
+      sample.push(trainPoints[Math.floor(Math.random() * trainPoints.length)]);
+    }
+
+    // 构建决策树（简化版）
+    const buildTree = (
+      data: Array<{ features: number[]; label: number }>,
+      depth: number
+    ): any => {
+      const labels = data.map((d) => d.label);
+      const uniqueLabels = [...new Set(labels)];
+
+      if (uniqueLabels.length === 1 || depth >= maxDepth || data.length < minSamplesSplit) {
+        const labelCounts: Record<number, number> = {};
+        labels.forEach((l) => (labelCounts[l] = (labelCounts[l] || 0) + 1));
+        const majorityLabel = parseInt(
+          Object.entries(labelCounts).sort((a, b) => b[1] - a[1])[0][0]
+        );
+        return { label: majorityLabel };
+      }
+
+      // 随机选择特征子集
+      const featureSubset: number[] = [];
+      const numFeaturesToSelect = Math.ceil(Math.sqrt(numFeatures));
+      while (featureSubset.length < numFeaturesToSelect) {
+        const f = Math.floor(Math.random() * numFeatures);
+        if (!featureSubset.includes(f)) {
+          featureSubset.push(f);
+        }
+      }
+
+      // 寻找最佳分裂
+      let bestSplit: { feature: number; threshold: number; gain: number } | null = null;
+
+      for (const featureIdx of featureSubset) {
+        const values = data.map((d) => d.features[featureIdx]);
+        const sortedValues = [...new Set(values)].sort((a, b) => a - b);
+
+        for (let i = 0; i < sortedValues.length - 1; i++) {
+          const threshold = (sortedValues[i] + sortedValues[i + 1]) / 2;
+          const left = data.filter((d) => d.features[featureIdx] < threshold);
+          const right = data.filter((d) => d.features[featureIdx] >= threshold);
+
+          if (left.length === 0 || right.length === 0) continue;
+
+          // 计算信息增益（简化版）
+          const gain = left.length * right.length;
+
+          if (!bestSplit || gain > bestSplit.gain) {
+            bestSplit = { feature: featureIdx, threshold, gain };
+          }
+        }
+      }
+
+      if (!bestSplit) {
+        const labelCounts: Record<number, number> = {};
+        labels.forEach((l) => (labelCounts[l] = (labelCounts[l] || 0) + 1));
+        const majorityLabel = parseInt(
+          Object.entries(labelCounts).sort((a, b) => b[1] - a[1])[0][0]
+        );
+        return { label: majorityLabel };
+      }
+
+      // 记录特征重要性
+      featureImportance[bestSplit.feature] += bestSplit.gain;
+
+      const left = data.filter((d) => d.features[bestSplit!.feature] < bestSplit!.threshold);
+      const right = data.filter((d) => d.features[bestSplit!.feature] >= bestSplit!.threshold);
+
+      return {
+        feature: bestSplit.feature,
+        threshold: bestSplit.threshold,
+        left: buildTree(left, depth + 1),
+        right: buildTree(right, depth + 1),
+      };
+    };
+
+    trees.push(buildTree(sample, 0));
+  }
+
+  // 预测
+  let correct = 0;
+  for (const testPoint of testPoints) {
+    const votes: Record<number, number> = {};
+
+    for (const tree of trees) {
+      let node = tree;
+      while (node.label === undefined) {
+        if (testPoint.features[node.feature] < node.threshold) {
+          node = node.left;
+        } else {
+          node = node.right;
+        }
+      }
+      votes[node.label] = (votes[node.label] || 0) + 1;
+    }
+
+    const prediction = parseInt(
+      Object.entries(votes).sort((a, b) => b[1] - a[1])[0][0]
+    );
+    predictions.push(prediction);
+
+    if (prediction === testPoint.label) {
+      correct++;
+    }
+  }
+
+  // 归一化特征重要性
+  const totalImportance = featureImportance.reduce((sum, val) => sum + val, 0);
+  const normalizedImportance = featureImportance.map(
+    (val) => val / totalImportance
+  );
+
+  return {
+    predictions,
+    accuracy: correct / testPoints.length,
+    featureImportance: normalizedImportance,
+  };
+}
+
+// ==================== MLP 实现（简化版） ====================
+
+export interface MLPParams {
+  hiddenLayers: number[];
+  learningRate: number;
+  iterations: number;
+}
+
+export interface MLPResult {
+  lossHistory: number[];
+  finalLoss: number;
+  accuracy: number;
+  predictions: number[];
+}
+
+/**
+ * MLP 算法实现（简化版）
+ */
+export function runMLP(
+  trainPoints: Array<{ features: number[]; label: number }>,
+  params: MLPParams
+): MLPResult {
+  const { hiddenLayers, learningRate, iterations } = params;
+  const n = trainPoints.length;
+  const inputSize = trainPoints[0].features.length;
+  const outputSize = 2; // 二分类
+
+  // 初始化网络
+  const layers = [inputSize, ...hiddenLayers, outputSize];
+  const weights: number[][][] = [];
+  const biases: number[][] = [];
+
+  for (let i = 0; i < layers.length - 1; i++) {
+    weights.push(
+      Array(layers[i + 1])
+        .fill(0)
+        .map(() =>
+          Array(layers[i])
+            .fill(0)
+            .map(() => (Math.random() - 0.5) * 0.5)
+        )
+    );
+    biases.push(Array(layers[i + 1]).fill(0).map(() => (Math.random() - 0.5) * 0.5));
+  }
+
+  // 激活函数
+  const sigmoid = (z: number): number => 1 / (1 + Math.exp(-Math.max(-500, Math.min(500, z))));
+  const sigmoidDerivative = (z: number): number => z * (1 - z);
+
+  const lossHistory: number[] = [];
+
+  // 训练
+  for (let iter = 0; iter < iterations; iter++) {
+    let totalLoss = 0;
+
+    for (const point of trainPoints) {
+      // 前向传播
+      const activations: number[][] = [point.features];
+      const zs: number[][] = [];
+
+      for (let l = 0; l < layers.length - 1; l++) {
+        const z: number[] = [];
+        const a: number[] = [];
+
+        for (let j = 0; j < layers[l + 1]; j++) {
+          let sum = biases[l][j];
+          for (let k = 0; k < layers[l]; k++) {
+            sum += weights[l][j][k] * activations[l][k];
+          }
+          z.push(sum);
+          a.push(sigmoid(sum));
+        }
+
+        zs.push(z);
+        activations.push(a);
+      }
+
+      // 计算损失
+      const output = activations[activations.length - 1];
+      const target = point.label === 1 ? [0, 1] : [1, 0];
+      const loss = output.reduce(
+        (sum, val, i) => sum - (target[i] * Math.log(val + 1e-15) + (1 - target[i]) * Math.log(1 - val + 1e-15)),
+        0
+      );
+      totalLoss += loss;
+
+      // 反向传播（简化版）
+      const deltas: number[][] = [output.map((val, i) => (val - target[i]) * sigmoidDerivative(val))];
+
+      for (let l = layers.length - 2; l > 0; l--) {
+        const delta: number[] = [];
+        for (let j = 0; j < layers[l]; j++) {
+          let sum = 0;
+          for (let k = 0; k < layers[l + 1]; k++) {
+            sum += weights[l][k][j] * deltas[0][k];
+          }
+          delta.push(sum * sigmoidDerivative(activations[l][j]));
+        }
+        deltas.unshift(delta);
+      }
+
+      // 更新权重和偏置
+      for (let l = 0; l < layers.length - 1; l++) {
+        for (let j = 0; j < layers[l + 1]; j++) {
+          for (let k = 0; k < layers[l]; k++) {
+            weights[l][j][k] -= learningRate * deltas[l][j] * activations[l][k];
+          }
+          biases[l][j] -= learningRate * deltas[l][j];
+        }
+      }
+    }
+
+    lossHistory.push(totalLoss / n);
+  }
+
+  // 预测
+  const predictions: number[] = [];
+  let correct = 0;
+
+  for (const point of trainPoints) {
+    const activations: number[][] = [point.features];
+
+    for (let l = 0; l < layers.length - 1; l++) {
+      const a: number[] = [];
+      for (let j = 0; j < layers[l + 1]; j++) {
+        let sum = biases[l][j];
+        for (let k = 0; k < layers[l]; k++) {
+          sum += weights[l][j][k] * activations[l][k];
+        }
+        a.push(sigmoid(sum));
+      }
+      activations.push(a);
+    }
+
+    const output = activations[activations.length - 1];
+    const prediction = output[1] > output[0] ? 1 : 0;
+    predictions.push(prediction);
+
+    if (prediction === point.label) {
+      correct++;
+    }
+  }
+
+  return {
+    lossHistory,
+    finalLoss: lossHistory[lossHistory.length - 1] || 0,
+    accuracy: correct / n,
+    predictions,
+  };
+}

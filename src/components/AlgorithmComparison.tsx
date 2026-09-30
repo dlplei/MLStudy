@@ -20,6 +20,11 @@ export function AlgorithmComparison({ lang }: AlgorithmComparisonProps) {
     { id: 'linear-regression', name: lang === 'zh' ? '线性回归' : 'Linear Regression' },
     { id: 'decision-tree', name: lang === 'zh' ? '决策树' : 'Decision Tree' },
     { id: 'svm', name: lang === 'zh' ? '支持向量机' : 'SVM' },
+    { id: 'logistic-regression', name: lang === 'zh' ? '逻辑回归' : 'Logistic Regression' },
+    { id: 'knn', name: lang === 'zh' ? 'K近邻' : 'KNN' },
+    { id: 'pca', name: lang === 'zh' ? '主成分分析' : 'PCA' },
+    { id: 'random-forest', name: lang === 'zh' ? '随机森林' : 'Random Forest' },
+    { id: 'mlp', name: lang === 'zh' ? '多层感知机' : 'MLP' },
   ];
 
   return (
