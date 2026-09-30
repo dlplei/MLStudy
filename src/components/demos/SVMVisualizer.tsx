@@ -126,16 +126,16 @@ export function SVMVisualizer({ visualizationData, lang }: SVMVisualizerProps) {
 
         {/* 图例 */}
         <div className="flex items-center justify-center gap-4 mt-3 text-xs">
-          <div className="flex items-center gap-1.5">
+          <div key="class0" className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-full bg-blue-500"></div>
             <span className="text-slate-400">{labels.class0}</span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div key="class1" className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-full bg-red-500"></div>
             <span className="text-slate-400">{labels.class1}</span>
           </div>
           {svPoints.length > 0 && (
-            <div className="flex items-center gap-1.5">
+            <div key="sv" className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-full border-2 border-amber-400"></div>
               <span className="text-slate-400">{labels.supportVectors}</span>
             </div>

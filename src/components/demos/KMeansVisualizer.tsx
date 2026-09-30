@@ -51,7 +51,7 @@ export function KMeansVisualizer({ visualizationData, lang }: KMeansVisualizerPr
               </span>
             ))}
           {unassigned.length > 0 && (
-            <span className="flex items-center gap-1.5 text-xs">
+            <span key="unassigned" className="flex items-center gap-1.5 text-xs">
               <span className="w-3 h-3 rounded-full bg-slate-400" />
               {lang === 'zh' ? '未分配' : 'Unassigned'}
             </span>
