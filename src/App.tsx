@@ -5,13 +5,15 @@ import { demoService } from './services/DemoService';
 import { AlgorithmDemoContainer } from './components/demos/AlgorithmDemoContainer';
 import { MathDerivation } from './components/MathDerivation';
 import { getDerivation, hasDerivation } from './data/derivations';
+import { InteractiveDemo } from './components/InteractiveDemo';
+import { AlgorithmComparison } from './components/AlgorithmComparison';
 
 function App() {
   const [lang, setLang] = useState<Lang>('zh');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedAlgorithm, setSelectedAlgorithm] = useState<Algorithm | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'detail' | 'demo' | 'derivation'>('detail');
+  const [activeTab, setActiveTab] = useState<'detail' | 'demo' | 'derivation' | 'interactive' | 'comparison'>('detail');
 
   const t = translations[lang];
 
@@ -317,6 +319,23 @@ function App() {
             </div>
           </div>
         </section>
+
+        {/* Algorithm Comparison */}
+        <section className="mt-16">
+          <h2 className="text-2xl font-bold text-center mb-8">
+            <span className="bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">
+              🔄 {lang === 'zh' ? '算法对比实验室' : 'Algorithm Comparison Lab'}
+            </span>
+          </h2>
+          <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-6">
+            <p className="text-center text-slate-300 mb-6">
+              {lang === 'zh'
+                ? '并排对比不同算法的效果，直观理解算法差异'
+                : 'Compare different algorithms side by side to understand their differences'}
+            </p>
+            <AlgorithmComparison lang={lang} />
+          </div>
+        </section>
       </main>
 
       {/* Detail Modal */}
@@ -386,6 +405,16 @@ function App() {
                   📐 {lang === 'zh' ? '数学推导' : 'Math Derivation'}
                 </button>
               )}
+              <button
+                onClick={() => setActiveTab('interactive')}
+                className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                  activeTab === 'interactive'
+                    ? 'text-amber-400 border-b-2 border-amber-400 bg-amber-500/5'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                🎛️ {lang === 'zh' ? '交互实验' : 'Interactive Lab'}
+              </button>
             </div>
 
             {/* Tab Content */}
@@ -414,6 +443,12 @@ function App() {
               )}
               {activeTab === 'derivation' && (
                 <DerivationTab
+                  algoId={selectedAlgorithm.id}
+                  lang={lang}
+                />
+              )}
+              {activeTab === 'interactive' && (
+                <InteractiveTab
                   algoId={selectedAlgorithm.id}
                   lang={lang}
                 />
@@ -621,6 +656,15 @@ function DerivationTab({ algoId, lang }: DerivationTabProps) {
   }
 
   return <MathDerivation derivation={derivation} lang={lang} />;
+}
+
+interface InteractiveTabProps {
+  algoId: string;
+  lang: Lang;
+}
+
+function InteractiveTab({ algoId, lang }: InteractiveTabProps) {
+  return <InteractiveDemo algorithmId={algoId} lang={lang} />;
 }
 
 export default App;
