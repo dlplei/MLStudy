@@ -120,6 +120,20 @@ function simulateLLMResponse(
         '线已经很好地穿过了数据点的中间，误差很小了。',
         '完成了！这条线是所有可能的直线中，与数据点总体距离最小的一条。',
       ],
+      'decision-tree': [
+        '想象你有一堆水果，你要通过问问题的方式来区分苹果和橙子。决策树就是这样一个"问问题"的过程。',
+        '我们先问："这个水果是什么颜色？" 因为颜色是最容易区分苹果和橙子的特征。',
+        '如果是橙色，那就是橙子！这个分支完成了。但红色的可能是苹果也可能是橙子，需要继续问问题。',
+        '对于不是橙色的水果，我们再问："它有多重？" 如果小于160克，可能是某种水果；如果大于等于160克，可能是另一种。',
+        '完成了！现在你可以通过问两个问题来判断任何水果：1. 什么颜色？2. 如果不确定，有多重？这就是决策树的魅力！',
+      ],
+      'svm': [
+        '想象地上有两堆不同颜色的球，你要放一根棍子把它们分开。SVM 就是找那根"最佳"的棍子。',
+        '我们先随便放一根棍子，看看效果如何。这根棍子就是"超平面"，它把空间分成两半。',
+        '我们不仅要分开两堆球，还要让棍子离两边的球都尽可能远。这样分类才更稳定、更可靠。',
+        '注意那些离棍子最近的球（用大圆圈标记），它们就是"支持向量"。它们"支持"着棍子的位置，其他球不影响棍子怎么放。',
+        '完成了！这根棍子不仅分开了两堆球，而且离两边的球都最远。这就是 SVM 找到的"最佳"分类方式！',
+      ],
     },
     en: {
       'kmeans': [
@@ -135,6 +149,20 @@ function simulateLLMResponse(
         'The line is getting closer to the data. The distance (error) from each point to the line is shrinking.',
         'The line now passes nicely through the middle of the data points. The error is very small.',
         'Done! This line has the smallest overall distance to all data points among all possible lines.',
+      ],
+      'decision-tree': [
+        'Imagine you have a pile of fruits and you need to distinguish apples from oranges by asking questions. A decision tree is exactly this "question-asking" process.',
+        'We first ask: "What color is this fruit?" Because color is the easiest feature to distinguish apples from oranges.',
+        'If it\'s orange, it\'s an orange! This branch is done. But red ones could be apples or oranges, we need to ask more questions.',
+        'For fruits that are not orange, we ask again: "How heavy is it?" If less than 160g, it might be one type; if >= 160g, it might be another.',
+        'Done! Now you can classify any fruit by asking two questions: 1. What color? 2. If unsure, how heavy? This is the magic of decision trees!',
+      ],
+      'svm': [
+        'Imagine two piles of different colored balls on the ground, and you need to place a stick to separate them. SVM finds that "best" stick.',
+        'We first place a stick randomly to see how it works. This stick is the "hyperplane" that divides the space in half.',
+        'We not only need to separate the two piles of balls, but also keep the stick as far as possible from the balls on both sides. This makes classification more stable and reliable.',
+        'Notice the balls closest to the stick (marked with large circles), they are the "support vectors". They "support" the position of the stick, while other balls don\'t affect how the stick is placed.',
+        'Done! This stick not only separates the two piles of balls, but is also farthest from the balls on both sides. This is the "best" classification method found by SVM!',
       ],
     },
   };
