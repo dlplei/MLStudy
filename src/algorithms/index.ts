@@ -878,6 +878,16 @@ export function runRandomForest(
 ): RandomForestResult {
   const { nTrees, maxDepth, minSamplesSplit } = params;
   const predictions: number[] = [];
+  
+  // 安全检查：确保数据不为空
+  if (trainPoints.length === 0 || testPoints.length === 0) {
+    return {
+      predictions: [],
+      accuracy: 0,
+      featureImportance: [],
+    };
+  }
+  
   const numFeatures = trainPoints[0].features.length;
   const featureImportance = new Array(numFeatures).fill(0);
 
