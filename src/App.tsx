@@ -3,13 +3,15 @@ import { algorithms, categories, Algorithm, Category } from './data/algorithms';
 import { translations, Lang } from './i18n/translations';
 import { demoService } from './services/DemoService';
 import { AlgorithmDemoContainer } from './components/demos/AlgorithmDemoContainer';
+import { MathDerivation } from './components/MathDerivation';
+import { getDerivation, hasDerivation } from './data/derivations';
 
 function App() {
   const [lang, setLang] = useState<Lang>('zh');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedAlgorithm, setSelectedAlgorithm] = useState<Algorithm | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'detail' | 'demo'>('detail');
+  const [activeTab, setActiveTab] = useState<'detail' | 'demo' | 'derivation'>('detail');
 
   const t = translations[lang];
 
@@ -197,6 +199,11 @@ function App() {
                         {lang === 'zh' ? '可演示' : 'Demo'}
                       </span>
                     )}
+                    {hasDerivation(algo.id) && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 font-medium">
+                        {lang === 'zh' ? '推导' : 'Math'}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <p className="mt-3 text-sm text-slate-300 line-clamp-2">
@@ -264,6 +271,9 @@ function App() {
                         {algo.icon} {getAlgoName(algo)}
                         {hasDemo(algo.id) && (
                           <span className="ml-1 text-emerald-400">●</span>
+                        )}
+                        {hasDerivation(algo.id) && (
+                          <span className="ml-0.5 text-purple-400">◆</span>
                         )}
                       </span>
                     ))}
@@ -364,11 +374,23 @@ function App() {
                   🎬 {lang === 'zh' ? '动态演示' : 'Interactive Demo'}
                 </button>
               )}
+              {hasDerivation(selectedAlgorithm.id) && (
+                <button
+                  onClick={() => setActiveTab('derivation')}
+                  className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                    activeTab === 'derivation'
+                      ? 'text-purple-400 border-b-2 border-purple-400 bg-purple-500/5'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  📐 {lang === 'zh' ? '数学推导' : 'Math Derivation'}
+                </button>
+              )}
             </div>
 
             {/* Tab Content */}
             <div className="p-5">
-              {activeTab === 'detail' ? (
+              {activeTab === 'detail' && (
                 <DetailTab
                   algo={selectedAlgorithm}
                   lang={lang}
@@ -383,8 +405,15 @@ function App() {
                   hasDemo={hasDemo(selectedAlgorithm.id)}
                   onOpenDemo={() => setActiveTab('demo')}
                 />
-              ) : (
+              )}
+              {activeTab === 'demo' && (
                 <DemoTab
+                  algoId={selectedAlgorithm.id}
+                  lang={lang}
+                />
+              )}
+              {activeTab === 'derivation' && (
+                <DerivationTab
                   algoId={selectedAlgorithm.id}
                   lang={lang}
                 />
@@ -568,6 +597,30 @@ function DemoTab({ algoId, lang }: DemoTabProps) {
   }
 
   return <AlgorithmDemoContainer algorithmId={algoId} lang={lang} />;
+}
+
+interface DerivationTabProps {
+  algoId: string;
+  lang: Lang;
+}
+
+function DerivationTab({ algoId, lang }: DerivationTabProps) {
+  const derivation = getDerivation(algoId);
+  
+  if (!derivation) {
+    return (
+      <div className="text-center py-8">
+        <span className="text-4xl">🚧</span>
+        <p className="mt-3 text-slate-400">
+          {lang === 'zh'
+            ? '该算法的数学推导正在准备中...'
+            : 'Math derivation for this algorithm is being prepared...'}
+        </p>
+      </div>
+    );
+  }
+
+  return <MathDerivation derivation={derivation} lang={lang} />;
 }
 
 export default App;
