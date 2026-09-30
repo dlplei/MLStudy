@@ -122,9 +122,10 @@ export function InteractiveDemo({ algorithmId, lang }: InteractiveDemoProps) {
         return runRandomForest(trainData, testData, params as any);
       }
       case 'mlp': {
+        const hiddenLayersStr = params.hiddenLayers || '4,4';
         const mlpParams = {
           ...params,
-          hiddenLayers: (params.hiddenLayers as string).split(',').map(Number)
+          hiddenLayers: (hiddenLayersStr as string).split(',').map(Number)
         };
         return runMLP(data, mlpParams as any);
       }
